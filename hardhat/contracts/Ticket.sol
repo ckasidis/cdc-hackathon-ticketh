@@ -62,13 +62,11 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         return uriOwners;
     }
 
-    function setPrice(uint newPriceWei) external {
-        _checkOwner();
+    function setPrice(uint newPriceWei) external onlyOwner {
         ticketPriceWei = newPriceWei;
     }
 
-    function setMaxTicketLimit(uint newMaxTicketsOwnable) external {
-        _checkOwner();
+    function setMaxTicketLimit(uint newMaxTicketsOwnable) external onlyOwner {
         maxTicketsOwnable = newMaxTicketsOwnable;
     }
 
