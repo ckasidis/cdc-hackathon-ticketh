@@ -3,6 +3,7 @@ import { GetServerSideProps, NextPage } from 'next';
 import { User } from 'next-auth';
 import { signOut } from 'next-auth/react';
 import Head from 'next/head';
+import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { getServerAuthSession } from '../../server/common/get-server-auth-session';
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
@@ -33,15 +34,17 @@ const DashboardPage: NextPage<DashboardPageProps> = ({ user }) => {
 			<Head>
 				<title>Dashboard Page</title>
 			</Head>
-			<Stack spacing="5">
-				<Text as="p">Address: {user.address}</Text>
-				<Button
-					onClick={() => signOut({ callbackUrl: '/signin' })}
-					variant="primary"
-				>
-					Sign out
-				</Button>
-			</Stack>
+			<DashboardLayout>
+				<Stack spacing="5">
+					<Text as="p">Address: {user.address}</Text>
+					<Button
+						onClick={() => signOut({ callbackUrl: '/signin' })}
+						variant="primary"
+					>
+						Sign out
+					</Button>
+				</Stack>
+			</DashboardLayout>
 		</>
 	);
 };

@@ -1,5 +1,7 @@
+import { Heading } from '@chakra-ui/react';
 import { NextPage } from 'next';
 import Head from 'next/head';
+import BaseLayout from '../components/layouts/BaseLayout';
 
 const HomePage: NextPage = ({}) => {
 	return (
@@ -7,7 +9,11 @@ const HomePage: NextPage = ({}) => {
 			<Head>
 				<title>Home Page</title>
 			</Head>
-			<div>Home Page</div>
+			<BaseLayout>
+				<Heading as="h1" size="md" textAlign="center">
+					Home Page
+				</Heading>
+			</BaseLayout>
 		</>
 	);
 };

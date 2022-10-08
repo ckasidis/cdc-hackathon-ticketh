@@ -1,8 +1,9 @@
-import { Button, Center, Heading, Stack, useToast } from '@chakra-ui/react';
 import axios from 'axios';
+import { Button, Center, Heading, Stack, useToast } from '@chakra-ui/react';
 import { signIn } from 'next-auth/react';
 import { useAccount, useConnect, useDisconnect, useSignMessage } from 'wagmi';
 import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
+import BaseLayout from '../components/layouts/BaseLayout';
 
 const SignInPage = () => {
 	const toast = useToast();
@@ -50,7 +51,7 @@ const SignInPage = () => {
 		}
 	};
 	return (
-		<Center minH="100vh">
+		<BaseLayout>
 			<Stack spacing={5}>
 				<Heading as="h1" size={{ base: 'xs', sm: 'sm' }} textAlign="center">
 					Web3 Authentication
@@ -59,7 +60,7 @@ const SignInPage = () => {
 					Authenticate via Metamask
 				</Button>
 			</Stack>
-		</Center>
+		</BaseLayout>
 	);
 };
 
