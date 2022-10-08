@@ -320,12 +320,12 @@ const MyContractsPage: NextPage<MyContractsPageProps> = ({ user }) => {
 										</Tr>
 									</Thead>
 									<Tbody>
-										{myContracts?.map((item) => (
-											<Tr key={item.address}>
+										{myContracts?.map((contract) => (
+											<Tr key={contract.address}>
 												<Td>
 													<IconButton
 														onClick={() => {
-															setContractToUpdate(item.address);
+															setContractToUpdate(contract.address);
 															onOpen();
 														}}
 														aria-label="update contract"
@@ -336,27 +336,27 @@ const MyContractsPage: NextPage<MyContractsPageProps> = ({ user }) => {
 												</Td>
 												<Td>
 													<Text fontSize="xs" color="muted">
-														{truncateString(item.address)}
+														{truncateString(contract.address)}
 													</Text>
 												</Td>
 												<Td>
 													<Text fontSize="xs" color="muted">
-														{item.label}
+														{contract.label}
 													</Text>
 												</Td>
 												<Td>
 													<Text fontSize="xs" color="muted">
-														{item.event?.name || '-'}
+														{contract.event?.name || '-'}
 													</Text>
 												</Td>
 												<Td>
 													<Text fontSize="xs" color="muted">
-														{truncateString(item.contentId)}
+														{truncateString(contract.contentId)}
 													</Text>
 												</Td>
 												<Td>
 													<Text fontSize="xs" color="muted">
-														{item.createdAt.toLocaleDateString()}
+														{contract.createdAt.toLocaleDateString()}
 													</Text>
 												</Td>
 											</Tr>
