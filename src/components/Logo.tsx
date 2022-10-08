@@ -1,14 +1,12 @@
-import { Button, Text } from '@chakra-ui/react';
+import { Button, Image } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 
 const Logo: React.FC = () => {
 	const router = useRouter();
 
 	return (
-		<Button onClick={() => router.push('/')} variant="unstyled">
-			<Text fontSize="xl" color="on-accent" fontWeight="bold">
-				App Logo
-			</Text>
+		<Button onClick={() => router.push('/')} variant="unstyled" maxW={110}>
+			<Image src="/logo-dark.png" alt="TickETH" />
 		</Button>
 	);
 };
