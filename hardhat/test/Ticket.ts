@@ -211,6 +211,89 @@ describe('Mint Exceed Ticket Ownable Limit', function() {
 	});
 });
 
+describe('Dynamic Ownable Limit', function() {
+	it('Owner increases max Ownable Limit = 1,', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1);
+
+		const option = {value: 1e9};
+
+		await expect(event.connect(account1).safeMint(account1.address, 1, option)).to.changeEtherBalances([owner, account1], [option.value, -option.value])
+		await expect(event.connect(account1).safeMint(account1.address, 2, option)).to.be.revertedWith(
+			"This address owned maximum number of tickets"
+		);
+
+		await event.setMaxTicketLimit(2);
+		expect(await event.maxTicketsOwnable()).to.equal(2);
+
+		await expect(event.connect(account1).safeMint(account1.address, 2, option)).to.changeEtherBalances([owner, account1], [option.value, -option.value])
+		await expect(event.connect(account1).safeMint(account1.address, 3, option)).to.be.revertedWith(
+			"This address owned maximum number of tickets"
+		);
+	});
+
+	it('Owner decreases max Ownable Limit', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option = {value: 1e9};
+
+		await expect(event.connect(account1).safeMint(account1.address, 1, option)).to.changeEtherBalances([owner, account1], [option.value, -option.value])
+		await expect(event.connect(account1).safeMint(account1.address, 2, option)).to.changeEtherBalances([owner, account1], [option.value, -option.value])
+		
+
+		await event.setMaxTicketLimit(1);
+		expect(await event.maxTicketsOwnable()).to.equal(1);
+
+		await expect(event.connect(account1).safeMint(account1.address, 3, option)).to.be.revertedWith(
+			"This address owned maximum number of tickets"
+		);
+	});
+
+	it('Owner decreases then increases max Ownable Limit', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option = {value: 1e9};
+
+		await expect(event.connect(account1).safeMint(account1.address, 1, option)).to.changeEtherBalances([owner, account1], [option.value, -option.value])
+		await expect(event.connect(account1).safeMint(account1.address, 2, option)).to.changeEtherBalances([owner, account1], [option.value, -option.value])
+		
+		await event.setMaxTicketLimit(1);
+		expect(await event.maxTicketsOwnable()).to.equal(1);
+
+		await expect(event.connect(account1).safeMint(account1.address, 3, option)).to.be.revertedWith(
+			"This address owned maximum number of tickets"
+		);
+
+		await event.setMaxTicketLimit(2);
+		expect(await event.maxTicketsOwnable()).to.equal(2);
+
+		await expect(event.connect(account1).safeMint(account1.address, 3, option)).to.be.revertedWith(
+			"This address owned maximum number of tickets"
+		);
+
+		await event.setMaxTicketLimit(3);
+		expect(await event.maxTicketsOwnable()).to.equal(3);
+
+		await expect(event.connect(account1).safeMint(account1.address, 3, option)).to.changeEtherBalances([owner, account1], [option.value, -option.value])
+	});
+
+	it('Non-owner tries to set max Ownable Limit', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		await expect(event.connect(account1).setMaxTicketLimit(3)).to.be.revertedWith(
+			"Ownable: caller is not the owner"
+		);
+		expect(await event.maxTicketsOwnable()).to.equal(2);
+	});
+});
+
 describe('Dynamic Pricing', function () {
 	it('Owner increase price', async function () {
 		const [owner, account1] = await ethers.getSigners();
@@ -246,5 +329,17 @@ describe('Dynamic Pricing', function () {
 		await expect(event.connect(account1).safeMint(owner.address, 3, option)).to.revertedWith(
 			"Value sent must be greater than price"
 		);
+	});
+
+	it('Non-owner tries to set price', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		await expect(event.connect(account1).setPrice(1e10)).to.be.revertedWith(
+			"Ownable: caller is not the owner"
+		);
+
+		expect(await event.ticketPriceWei()).to.equal(1e9);
 	});
 });
