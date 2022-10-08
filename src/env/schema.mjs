@@ -7,11 +7,23 @@ import { z } from 'zod';
  */
 export const serverSchema = z.object({
 	DATABASE_URL: z.string().url(),
-	NODE_ENV: z.enum(['development', 'test', 'production']),
 	NEXTAUTH_URL: z.string().url(),
 	NEXTAUTH_SECRET: z.string(),
 	APP_DOMAIN: z.string(),
 	MORALIS_API_KEY: z.string(),
+	NODE_ENV: z.enum(['development', 'test', 'production']),
+
+    FIREBASE_TYPE: z.string(),
+    FIREBASE_PROJECT_ID: z.string(),
+    FIREBASE_PRIVATE_KEY_ID: z.string(),
+    FIREBASE_PRIVATE_KEY: z.string(),
+    FIREBASE_CLIENT_EMAIL: z.string(),
+    FIREBASE_CLIENT_ID: z.string(),
+    FIREBASE_AUTH_URI: z.string(),
+    FIREBASE_TOKEN_URI: z.string(),
+    FIREBASE_AUTH_PROVIDER_CERT_URL: z.string(),
+    FIREBASE_CLIENT_CERT_URL: z.string(),
+    FIREBASE_STORAGEBUCKET: z.string(),
 });
 
 /**
