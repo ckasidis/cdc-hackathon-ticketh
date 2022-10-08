@@ -19,6 +19,7 @@
     "@trpc/next": "^9.27.4",
     "@trpc/react": "^9.27.4",
     "@trpc/server": "^9.27.4",
+    "axios": "^1.1.2",
     "framer-motion": "^7.5.3",
     "moralis": "^2.6.4",
     "next": "12.3.1",
