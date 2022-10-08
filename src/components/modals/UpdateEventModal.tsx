@@ -1,0 +1,241 @@
+import {
+	Alert,
+	AlertDescription,
+	AlertIcon,
+	Box,
+	Button,
+	Center,
+	Checkbox,
+	CheckboxGroup,
+	FormControl,
+	FormErrorMessage,
+	FormHelperText,
+	FormLabel,
+	HStack,
+	Input,
+	Modal,
+	ModalBody,
+	ModalCloseButton,
+	ModalContent,
+	ModalFooter,
+	ModalHeader,
+	ModalOverlay,
+	Spinner,
+	Stack,
+	Textarea,
+	useToast,
+} from '@chakra-ui/react';
+import { useFormik } from 'formik';
+import { useQueryClient } from 'react-query';
+import { z } from 'zod';
+import { toFormikValidationSchema } from 'zod-formik-adapter';
+import { trpc } from '../../utils/trpc';
+import { truncateString } from '../../utils/truncate';
+
+interface UpdateEventModalProps {
+	id: string;
+	isOpen: boolean;
+	onClose: () => void;
+}
+
+const UpdateEventModal: React.FC<UpdateEventModalProps> = ({
+	id,
+	isOpen,
+	onClose,
+}) => {
+	const toast = useToast();
+
+	const queryClient = useQueryClient();
+
+	const {
+		data: myContracts,
+		isLoading: myContractsIsLoading,
+		isError: myContractsIsError,
+	} = trpc.useQuery(['my-contracts.read-contracts']);
+
+	const {
+		data: event,
+		isLoading: eventIsLoading,
+		isError: eventIsError,
+	} = trpc.useQuery([
+		'my-events.read-event',
+		{
+			id,
+		},
+	]);
+
+	const { mutate: updateEvent, isLoading: updateEventIsLoading } =
+		trpc.useMutation('my-events.update-event', {
+			onSuccess: () => {
+				queryClient.invalidateQueries('my-events.read-events');
+				queryClient.invalidateQueries('my-events.read-event');
+				queryClient.invalidateQueries('my-contracts.read-contracts');
+				queryClient.invalidateQueries('my-contracts.read-contract');
+				toast({
+					title: 'Event updated successfully',
+					status: 'success',
+					isClosable: true,
+					position: 'bottom-right',
+				});
+			},
+			onError: (error) => {
+				toast({
+					title: error.message,
+					status: 'error',
+					isClosable: true,
+					position: 'bottom-right',
+				});
+			},
+			onSettled: onClose,
+		});
+
+	const formik = useFormik({
+		initialValues: {
+			name: event?.name || '',
+			contracts: event?.contracts,
+			description: event?.description || '',
+		},
+		enableReinitialize: true,
+		validationSchema: toFormikValidationSchema(
+			z.object({
+				name: z.string({ required_error: 'name is required' }),
+				description: z.string().nullish(),
+			})
+		),
+		onSubmit: (values) => {
+			updateEvent({
+				id,
+				...values,
+			});
+		},
+	});
+
+	return (
+		<Modal isOpen={isOpen} onClose={onClose}>
+			<ModalOverlay />
+			<ModalContent>
+				<ModalCloseButton />
+				<ModalHeader>Update Event</ModalHeader>
+				<form onSubmit={formik.handleSubmit}>
+					<ModalBody>
+						{eventIsLoading ? (
+							<Center>
+								<Spinner />
+							</Center>
+						) : eventIsError ? (
+							<Alert status="error">
+								<AlertIcon />
+								<AlertDescription>Error fetching event</AlertDescription>
+							</Alert>
+						) : (
+							<Stack spacing={3}>
+								<FormControl id="name" isInvalid={!!formik.errors.name}>
+									<Stack>
+										<FormLabel variant="inline">Event Name</FormLabel>
+										<Input
+											value={formik.values.name}
+											onChange={formik.handleChange}
+											onBlur={formik.handleBlur}
+										/>
+										{formik.touched.name && (
+											<FormErrorMessage>{formik.errors.name}</FormErrorMessage>
+										)}
+									</Stack>
+								</FormControl>
+								<FormControl
+									id="description"
+									isInvalid={!!formik.errors.description}
+								>
+									<Stack>
+										<Box>
+											<FormLabel variant="inline">Event Description</FormLabel>
+											<FormHelperText mt="0" color="muted">
+												Write a short introduction about your event
+											</FormHelperText>
+										</Box>
+										<Textarea
+											value={formik.values.description}
+											onChange={formik.handleChange}
+											onBlur={formik.handleBlur}
+										/>
+										{formik.touched.description && (
+											<FormErrorMessage>
+												{formik.errors.description}
+											</FormErrorMessage>
+										)}
+									</Stack>
+								</FormControl>
+								<FormControl id="contracts">
+									<Stack>
+										<FormLabel variant="inline">Link Contracts</FormLabel>
+										{myContractsIsLoading ? (
+											<Center>
+												<Spinner />
+											</Center>
+										) : myContractsIsError ? (
+											<Alert status="error">
+												<AlertIcon />
+												<AlertDescription>
+													Error fetching contracts
+												</AlertDescription>
+											</Alert>
+										) : !myContracts?.filter(
+												(item) => item.eventId == event?.id || !item.eventId
+										  ).length ? (
+											<Alert status="warning">
+												<AlertIcon />
+												<AlertDescription>
+													You don&lsquo;t have any available contracts to link.
+													Please create new contracts or unlink contracts from
+													other events.
+												</AlertDescription>
+											</Alert>
+										) : (
+											<CheckboxGroup
+												value={formik.values.contracts?.map(
+													(item) => item.address
+												)}
+												onChange={(value) => {
+													formik.setFieldValue(
+														'contracts',
+														value.map((item) => ({ address: item.toString() }))
+													);
+												}}
+											>
+												<Stack maxH={20} overflowY="scroll">
+													{myContracts
+														.filter(
+															(item) =>
+																item.eventId == event?.id || !item.eventId
+														)
+														.map((item) => (
+															<Checkbox key={item.address} value={item.address}>
+																{truncateString(item.address)} ({item.label})
+															</Checkbox>
+														))}
+												</Stack>
+											</CheckboxGroup>
+										)}
+									</Stack>
+								</FormControl>
+							</Stack>
+						)}
+					</ModalBody>
+					<ModalFooter>
+						<HStack>
+							<Button
+								type="submit"
+								isLoading={updateEventIsLoading}
+								variant="primary"
+							>
+								Update
+							</Button>
+						</HStack>
+					</ModalFooter>
+				</form>
+			</ModalContent>
+		</Modal>
+	);
+};
+
+export default UpdateEventModal;
