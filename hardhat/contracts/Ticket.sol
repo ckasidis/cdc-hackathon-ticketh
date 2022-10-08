@@ -15,18 +15,29 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
 
     string private cid;
     uint public noOfTickets;
-    address[] private uriOwners;
+    
     uint public maxTicketsOwnable;
     uint public ticketPriceWei;
-    uint[] private resalePrices;
+
+    uint public maxResellPrice;
+
+    address[] private uriOwners;
+    //mapping(uint256 => uint) resalePrices; // Maps tokenId to resale price
+    uint[] public resalePrices;
+
+    bool pauseMint;
+    bool pauseResale;
 
     constructor(string memory _cid, uint _noOfTickets, uint _ticketPriceWei, uint _maxTicketsOwnable) ERC721("Ticket", "TKT") {
         cid = _cid;
         noOfTickets = _noOfTickets;
         uriOwners = new address[](_noOfTickets);
+        resalePrices = new uint[](_noOfTickets);
         ticketPriceWei = _ticketPriceWei;
         maxTicketsOwnable = _maxTicketsOwnable;
-        resalePrices = new uint[](_noOfTickets);
+
+        pauseMint = false;
+        pauseResale = false;
     }
 
     function _baseURI() internal view override returns (string memory) {
@@ -56,6 +67,8 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
         string memory strUri = string.concat(Strings.toString(uri), ".json");
         _setTokenURI(tokenId, strUri);
         uriOwners[shiftedIndex] = to;
+
+        resalePrices[tokenId] = 0;
     }
 
     function getUriOwners() external view returns (address[] memory) {
@@ -68,6 +81,40 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
 
     function setMaxTicketLimit(uint newMaxTicketsOwnable) external onlyOwner {
         maxTicketsOwnable = newMaxTicketsOwnable;
+    }
+
+    function getResalePrice(uint tokenId) view external returns (uint){
+        require(tokenId < noOfTickets, "Invalid token id");
+        return resalePrices[tokenId];
+    }
+
+    function setResalePrice(uint tokenId, uint newResalePrice) external {
+        require(msg.sender == ownerOf(tokenId), "Only owner of this token can set its price");
+        require((newResalePrice <= maxResellPrice) || (maxResellPrice == 0) || (ownerOf(tokenId) == owner()), "Resale price must be less than specified price ceiling");
+        resalePrices[tokenId] = newResalePrice;
+    }
+
+    /**
+     * Buyer (to) must send sufficient funds to buyTicket to buy ticket from the seller (from)
+     */
+    function transactTicket(address from, address to, uint tokenId) external payable {
+        require(tokenId < noOfTickets, "Invalid token id");
+        require(resalePrices[tokenId] != 0, "Token not set for sale");
+        require(from != to, "Can't perform transcation with same from and to address");
+        _safeTransfer(from, to, tokenId, "");
+        require(msg.value >= resalePrices[tokenId], "There must be sufficient funds to buy the token");
+        payable(from).transfer(msg.value);
+    }
+
+    function setMaximumResalePrice(uint newMaxResellPrice) external onlyOwner{
+        maxResellPrice = newMaxResellPrice;
+
+        // Invalidate market listing
+        for(uint i = 0; i < noOfTickets; i++) {
+            if(resalePrices[i] > maxResellPrice && (ownerOf(i) != owner())) {
+                resalePrices[i] = 0;
+            }
+        }
     }
 
     // The following functions are overrides required by Solidity.

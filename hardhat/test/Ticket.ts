@@ -343,3 +343,383 @@ describe('Dynamic Pricing', function () {
 		expect(await event.ticketPriceWei()).to.equal(1e9);
 	});
 });
+
+describe('Get Resale Price', function () {
+	it('Sucessful get resale price', async function() {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 1e9};
+
+		// Mint 
+		await expect(event.safeMint(owner.address, 1, {value: 0})).to.changeEtherBalance(owner, 0);
+		expect(await event.getResalePrice(0)).to.equal(0);
+	});
+});
+
+describe('Set Resale Price', function() {
+	it('Successful set resale price', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 1e9};
+
+		// Mint 
+		await expect(event.safeMint(owner.address, 1, {value: 0})).to.changeEtherBalance(owner, 0);
+
+		// Set Re-Sale Price
+		await event.setResalePrice(0, 1e5);
+		expect(await event.getResalePrice(0)).to.equal(1e5);
+
+		// Mint 
+		await expect(event.connect(account1).safeMint(account1.address, 2, option1)).to.changeEtherBalances([owner, account1], [option1.value, -option1.value]);
+
+		// Set Re-Sale Price
+		await event.connect(account1).setResalePrice(1, 1e5);
+		expect(await event.getResalePrice(1)).to.equal(1e5);
+	});
+
+	it('Non-token-owner tries to set resale price', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 0};
+
+		// Mint 
+		await expect(event.safeMint(owner.address, 1, option1)).to.changeEtherBalance(owner, 0);
+
+		// Set Re-Sale Price
+		await expect(event.connect(account1).setResalePrice(0, 1e5)).to.revertedWith(
+			"Only owner of this token can set its price"
+		);
+		expect(await event.getResalePrice(0)).to.equal(0);
+	});
+
+	it('Owner set resale price at maximum resale price', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 0};
+
+		// Mint 
+		await expect(event.safeMint(owner.address, 1, option1)).to.changeEtherBalance(owner, 0);
+
+		await event.setMaximumResalePrice(1e5);
+		expect(await event.maxResellPrice()).to.equal(1e5);
+
+		// Set Re-Sale Price
+		await event.setResalePrice(0, 1e5);
+		expect(await event.getResalePrice(0)).to.equal(1e5);
+	});
+
+	it('Owner set resale price above maximum resale price', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 0};
+
+		// Mint 
+		await expect(event.safeMint(owner.address, 1, option1)).to.changeEtherBalance(owner, 0);
+
+		await event.setMaximumResalePrice(1e5);
+		expect(await event.maxResellPrice()).to.equal(1e5);
+
+		// Set Re-Sale Price
+		await event.setResalePrice(0, 1e6);
+		expect(await event.getResalePrice(0)).to.equal(1e6);
+	});
+
+	it('Non-Owner set resale price at maximum resale price', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 1e9};
+
+		// Mint 
+		await expect(event.connect(account1).safeMint(account1.address, 1, option1)).to.changeEtherBalances([owner, account1], [option1.value, -option1.value]);
+
+		await event.setMaximumResalePrice(1e5);
+		expect(await event.maxResellPrice()).to.equal(1e5);
+
+		// Set Re-Sale Price
+		await event.connect(account1).setResalePrice(0, 1e5);
+		expect(await event.getResalePrice(0)).to.equal(1e5);
+	});
+
+	it('Non-Owner set resale price above maximum resale price', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 1e9};
+
+		// Mint 
+		await expect(event.connect(account1).safeMint(account1.address, 1, option1)).to.changeEtherBalances([owner, account1], [option1.value, -option1.value]);
+
+		await event.setMaximumResalePrice(1e5);
+		expect(await event.maxResellPrice()).to.equal(1e5);
+
+		// Set Re-Sale Price
+		await expect(event.connect(account1).setResalePrice(0, 1e6)).to.revertedWith(
+			"Resale price must be less than specified price ceiling"
+		);
+		expect(await event.getResalePrice(0)).to.equal(0);
+	});
+
+	it('Non-Token-Owner try to set resale price of non existing token', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 1e9};
+
+		// Mint 
+		await expect(event.connect(account1).safeMint(account1.address, 1, option1)).to.changeEtherBalances([owner, account1], [option1.value, -option1.value]);
+
+		// Set Re-Sale Price
+		await expect(event.connect(account1).setResalePrice(1, 1e6)).to.revertedWith(
+			"ERC721: invalid token ID"
+		);
+		expect(await event.getResalePrice(0)).to.equal(0);
+	});
+
+	it('Non-Token-Owner try to set resale price of others token', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 1e9};
+
+		// Mint 
+		await event.safeMint(owner.address, 1, {value:0});
+		await expect(event.connect(account1).safeMint(account1.address, 2, option1)).to.changeEtherBalances([owner, account1], [option1.value, -option1.value]);
+
+		// Set Re-Sale Price
+		await expect(event.connect(account1).setResalePrice(0, 1e6)).to.revertedWith(
+			"Only owner of this token can set its price"
+		);
+		expect(await event.getResalePrice(0)).to.equal(0);
+		expect(await event.getResalePrice(1)).to.equal(0);
+	});
+
+	it('Decrease maximum resale price, remove non owner listings', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 1e9};
+
+		// Mint 
+		await event.safeMint(owner.address, 1, {value:0});
+		await expect(event.connect(account1).safeMint(account1.address, 2, option1)).to.changeEtherBalances([owner, account1], [option1.value, -option1.value]);
+
+		await event.setResalePrice(0, 1e5);
+		await event.connect(account1).setResalePrice(1, 1e5);
+
+		expect(await event.getResalePrice(0)).to.equal(1e5);
+		expect(await event.getResalePrice(1)).to.equal(1e5);
+
+		await event.setMaximumResalePrice(1e4);
+
+		expect(await event.getResalePrice(0)).to.equal(1e5); // Owner ticket listing unchanged
+		expect(await event.getResalePrice(1)).to.equal(0); // Non-Owner ticket listing changed
+	});
+
+	it('Increase maximum resale price, does not change listings', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 1e9};
+
+		// Mint 
+		await event.safeMint(owner.address, 1, {value:0});
+		await expect(event.connect(account1).safeMint(account1.address, 2, option1)).to.changeEtherBalances([owner, account1], [option1.value, -option1.value]);
+
+		await event.setResalePrice(0, 1e5);
+		await event.connect(account1).setResalePrice(1, 1e5);
+
+		expect(await event.getResalePrice(0)).to.equal(1e5);
+		expect(await event.getResalePrice(1)).to.equal(1e5);
+
+		await event.setMaximumResalePrice(1e6);
+
+		expect(await event.getResalePrice(0)).to.equal(1e5); // Owner ticket listing unchanged
+		expect(await event.getResalePrice(1)).to.equal(1e5); // Non-Owner ticket listing changed
+	});
+
+});
+
+describe('Re-Selling Tickets', function () {
+	it('Successful transfer from owner to buyer, No Royalty', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 0};
+		const option2 = {value: 1e5};
+
+		// Mint 
+		await expect(event.safeMint(owner.address, 1, option1)).to.changeEtherBalance(owner, 0);
+
+		// Set Re-Sale Price
+		await event.setResalePrice(0, 1e5);
+		expect(await event.getResalePrice(0)).to.equal(1e5);
+
+		// Buy 
+		await expect(event.connect(account1).transactTicket(owner.address, account1.address, 0, option2)).to.changeEtherBalances([owner, account1], [option2.value, -option2.value]);
+	});
+
+	it('Successful transfer from owner to buyer No Change, No Royalty', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 0};
+		const option2 = {value: 1e6};
+
+		// Mint 
+		await expect(event.safeMint(owner.address, 1, option1)).to.changeEtherBalance(owner, 0);
+
+		// Set Re-Sale Price
+		await event.setResalePrice(0, 1e5);
+		expect(await event.getResalePrice(0)).to.equal(1e5);
+
+		// Buy 
+		await expect(event.connect(account1).transactTicket(owner.address, account1.address, 0, option2)).to.changeEtherBalances([owner, account1], [option2.value, -option2.value]);
+	});
+
+	it('Failed transfer from owner to buyer (insufficient funds), No Royalty', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 0};
+		const option2 = {value: 1e4};
+
+		// Mint 
+		await expect(event.safeMint(owner.address, 1, option1)).to.changeEtherBalance(owner, 0);
+
+		// Set Re-Sale Price
+		await event.setResalePrice(0, 1e5);
+		expect(await event.getResalePrice(0)).to.equal(1e5);
+
+		// Buy (Insufficient Funds)
+		await expect(event.connect(account1).transactTicket(owner.address, account1.address, 0, option2)).to.revertedWith(
+			"There must be sufficient funds to buy the token"
+		);
+	});
+
+	it('Failed transfer from owner to buyer (max owned limit), No Royalty', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 0};
+		const option2 = {value: 1e5};
+
+		// Mint 
+		await expect(event.safeMint(owner.address, 1, option1)).to.changeEtherBalance(owner, 0);
+		await expect(event.safeMint(account1.address, 2, option1)).to.changeEtherBalance(owner, 0);
+		await expect(event.safeMint(account1.address, 3, option1)).to.changeEtherBalance(owner, 0);
+
+		// Set Re-Sale Price
+		await event.setResalePrice(0, 1e5);
+		expect(await event.getResalePrice(0)).to.equal(1e5);
+
+		// Buy (exceed ownable limit)
+		await expect(event.connect(account1).transactTicket(owner.address, account1.address, 0, option2)).to.revertedWith(
+			"This address owned maximum number of tickets"
+		);
+	});
+
+	it('Failed transfer from owner to buyer (ticket not for sale), No Royalty', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 0};
+		const option2 = {value: 1e4};
+
+		// Mint 
+		await expect(event.safeMint(owner.address, 1, option1)).to.changeEtherBalance(owner, 0);
+
+		// Buy (Didn't set sale)
+		await expect(event.connect(account1).transactTicket(owner.address, account1.address, 2, option2)).to.revertedWith(
+			"Token not set for sale"
+		);
+	});
+
+	it('Failed transfer from owner to buyer (invalid token id), No Royalty', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 0};
+		const option2 = {value: 1e5};
+
+		// Mint 
+		await expect(event.safeMint(owner.address, 1, option1)).to.changeEtherBalance(owner, 0);
+
+		// Set Re-Sale Price
+		await event.setResalePrice(0, 1e5);
+		expect(await event.getResalePrice(0)).to.equal(1e5);
+
+		// Buy (Invalid Token Id)
+		await expect(event.connect(account1).transactTicket(owner.address, account1.address, 11, option2)).to.revertedWith(
+			"Invalid token id"
+		);
+	});
+
+	it('Failed transfer from buyer to buyer (from self to self), No Royalty', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 1e9};
+		const option2 = {value: 1e5};
+
+		// Mint 
+		await expect(event.connect(account1).safeMint(account1.address, 1, option1)).to.changeEtherBalances([owner, account1], [option1.value, -option1.value]);
+
+		// Set Re-Sale Price
+		await event.connect(account1).setResalePrice(0, 1e5);
+		expect(await event.connect(account1).getResalePrice(0)).to.equal(1e5);
+
+		// Buy (Transfer to self)
+		await expect(event.connect(account1).transactTicket(account1.address, account1.address, 0, option2)).to.revertedWith(
+			"Can't perform transcation with same from and to address"
+		);
+	});
+
+	it('Failed transfer from wrong owner to buyer, No Royalty', async function () {
+		const [owner, account1, account2] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option1 = {value: 1e9};
+		const option2 = {value: 1e5};
+
+		// Mint 
+		await expect(event.connect(account1).safeMint(account1.address, 1, option1)).to.changeEtherBalances([owner, account1], [option1.value, -option1.value]);
+		await event.safeMint(owner.address, 2, {value: 0});
+
+		// Set Re-Sale Price
+		await event.connect(account1).setResalePrice(0, 1e5);
+		expect(await event.connect(account1).getResalePrice(0)).to.equal(1e5);
+
+		await event.setResalePrice(1, 1e5);
+		expect(await event.getResalePrice(1)).to.equal(1e5);
+
+		// Buy (Transfer to self)
+		await expect(event.connect(account2).transactTicket(account1.address, account2.address, 1, option2)).to.revertedWith(
+			"ERC721: transfer from incorrect owner"
+		);
+	});
+});
