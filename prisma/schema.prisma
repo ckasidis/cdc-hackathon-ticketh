@@ -6,10 +6,36 @@ generator client {
 }
 
 datasource db {
-    provider = "sqlite"
+    provider = "postgresql"
     url      = env("DATABASE_URL")
 }
 
-model Example {
-    id String @id @default(cuid())
+model User {
+    id        String     @id
+    username  String?
+    contracts Contract[]
+    events    Event[]
+}
+
+model Contract {
+    address   String   @id
+    contentId String
+    label     String
+    userId    String
+    eventId   String?
+    createdAt DateTime @default(now())
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    event     Event?   @relation(fields: [eventId], references: [id], onDelete: SetNull)
+}
+
+model Event {
+    id          String     @id @default(uuid())
+    name        String
+    userId      String
+    description String?
+    createdAt   DateTime   @default(now())
+    contracts   Contract[]
+    user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, name])
 }
