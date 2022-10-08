@@ -12,23 +12,28 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
+
     string private cid;
     uint public noOfTickets;
     address[] private uriOwners;
     uint public maxTicketsOwnable;
+    uint public ticketPriceWei;
+    uint[] private resalePrices;
 
-    constructor(string memory _cid, uint _noOfTickets, uint _maxTicketsOwnable) ERC721("Ticket", "TKT") {
+    constructor(string memory _cid, uint _noOfTickets, uint _ticketPriceWei, uint _maxTicketsOwnable) ERC721("Ticket", "TKT") {
         cid = _cid;
         noOfTickets = _noOfTickets;
         uriOwners = new address[](_noOfTickets);
+        ticketPriceWei = _ticketPriceWei;
         maxTicketsOwnable = _maxTicketsOwnable;
+        resalePrices = new uint[](_noOfTickets);
     }
 
     function _baseURI() internal view override returns (string memory) {
         return string.concat("ipfs://", cid, '/');
     }
 
-    function safeMint(address to, uint uri) public {
+    function safeMint(address to, uint uri) public payable {
 
         // Check if index is valid
         require(uri >= 1 && uri <= noOfTickets, "Invalid token uri");
@@ -37,6 +42,13 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         // Check if index is minted
         require(uriOwners[shiftedIndex] == address(0), "This ticket has already been sold");
         
+        // Owner get to mint tickets for free
+        address ownerAddr = owner();
+        if(msg.sender != ownerAddr) {
+            require(msg.value >= ticketPriceWei, "Value sent must be greater than price");
+            payable(ownerAddr).transfer(msg.value); // Does not return change to buyer
+        }
+
         uint256 tokenId = _tokenIdCounter.current();
         _safeMint(to, tokenId); // Safe mint might fail so increment after success only
         _tokenIdCounter.increment();
@@ -61,7 +73,7 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
 
         // Check if owner balance exceed max
         uint256 toBalance = balanceOf(to);
-        require( (toBalance < maxTicketsOwnable) || (maxTicketsOwnable == 0), "This address owned maximum number of tickets");
+        require( (toBalance < maxTicketsOwnable) || (maxTicketsOwnable == 0) || (owner() == to), "This address owned maximum number of tickets");
     }
 
     function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
