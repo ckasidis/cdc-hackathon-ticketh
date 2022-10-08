@@ -28,13 +28,14 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
     bool pauseMint;
     bool pauseResale;
 
-    constructor(string memory _cid, uint _noOfTickets, uint _ticketPriceWei, uint _maxTicketsOwnable) ERC721("Ticket", "TKT") {
+    constructor(string memory _cid, uint _noOfTickets, uint _ticketPriceWei, uint _maxTicketsOwnable, uint _maxResellPrice) ERC721("Ticket", "TKT") {
         cid = _cid;
         noOfTickets = _noOfTickets;
         uriOwners = new address[](_noOfTickets);
         resalePrices = new uint[](_noOfTickets);
         ticketPriceWei = _ticketPriceWei;
         maxTicketsOwnable = _maxTicketsOwnable;
+        maxResellPrice = _maxResellPrice;
 
         pauseMint = false;
         pauseResale = false;

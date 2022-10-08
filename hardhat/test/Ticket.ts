@@ -6,7 +6,7 @@ describe('Deploy contract', function () {
 	it('Deployment should assign the total supply of tokens to the owner', async function () {
 		const [owner] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1, 0);
 
 		expect(await event.owner()).to.equal(owner.address);
 
@@ -19,7 +19,7 @@ describe('Safe Mint', function () {
 	it('Owner should be able to mint a new Token for free', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1, 0);
 
 		await expect(event.safeMint(owner.address, 1)).to.changeEtherBalance(owner, 0);
 		expect(await event.totalSupply()).to.equal(1);
@@ -40,7 +40,7 @@ describe('Safe Mint', function () {
 	it('Non-owner should be able to mint a new Token with a fee', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option = {value: 1e9};
 
@@ -62,7 +62,7 @@ describe('Safe Mint', function () {
 	it('Non-owner should be able to mint a new Token with a fee (no change)', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option = {value: 1e10}; // Value != price
 
@@ -84,7 +84,7 @@ describe('Safe Mint', function () {
 	it('Non-owner should not be able to mint a new Token with insufficent fee', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option = {value: 1e8};
 
@@ -104,7 +104,7 @@ describe('Duplicate Token URI', function () {
 	it('Should not be able to mint sold Token URIs', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1, 0);
 
 		await event.safeMint(owner.address, 1);
 		expect(await event.totalSupply()).to.equal(1);
@@ -123,7 +123,7 @@ describe('Invalid Token URI', function () {
 	it('URI cannot be greater than noOfTokens', async function () {
 		const [owner] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1, 0);
 
 		await expect(event.safeMint(owner.address, 11)).to.be.revertedWith(
 			"Invalid token uri"
@@ -133,7 +133,7 @@ describe('Invalid Token URI', function () {
 	it('URI cannot be less than 1', async function () {
 		const [owner] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1, 0);
 
 		await expect(event.safeMint(owner.address, 0)).to.be.revertedWith(
 			"Invalid token uri"
@@ -145,7 +145,7 @@ describe('Mint Exceed Ticket Ownable Limit', function() {
 	it('Max Ownable Limit = 1, buyer mint for self', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1, 0);
 
 		const option = {value: 1e9};
 
@@ -158,7 +158,7 @@ describe('Mint Exceed Ticket Ownable Limit', function() {
 	it('Max Ownable Limit = 2, buyer mint for self', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option = {value: 1e9};
 
@@ -173,7 +173,7 @@ describe('Mint Exceed Ticket Ownable Limit', function() {
 	it('Max Ownable Limit = 0 (no limit), buyer mint for self', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 3, 1e9, 0);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 3, 1e9, 0, 0);
 
 		const option = {value: 1e9};
 
@@ -187,7 +187,7 @@ describe('Mint Exceed Ticket Ownable Limit', function() {
 	it('Max Ownable Limit = 2, buyer mint for owner (no limit)', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 3, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 3, 1e9, 2, 0);
 
 		const option = {value: 1e9};
 
@@ -201,7 +201,7 @@ describe('Mint Exceed Ticket Ownable Limit', function() {
 	it('Max Ownable Limit = 1, owner mint for self (no limit)', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 3, 1e9, 1);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 3, 1e9, 1, 0);
 
 		for(var i = 1; i <= 3; i++){
 			await expect(event.safeMint(owner.address, i)).to.changeEtherBalance(owner, 0);
@@ -215,7 +215,7 @@ describe('Dynamic Ownable Limit', function() {
 	it('Owner increases max Ownable Limit = 1,', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1, 0);
 
 		const option = {value: 1e9};
 
@@ -236,7 +236,7 @@ describe('Dynamic Ownable Limit', function() {
 	it('Owner decreases max Ownable Limit', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option = {value: 1e9};
 
@@ -255,7 +255,7 @@ describe('Dynamic Ownable Limit', function() {
 	it('Owner decreases then increases max Ownable Limit', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option = {value: 1e9};
 
@@ -285,7 +285,7 @@ describe('Dynamic Ownable Limit', function() {
 	it('Non-owner tries to set max Ownable Limit', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		await expect(event.connect(account1).setMaxTicketLimit(3)).to.be.revertedWith(
 			"Ownable: caller is not the owner"
@@ -298,7 +298,7 @@ describe('Dynamic Pricing', function () {
 	it('Owner increase price', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option = {value: 1e9};
 		await expect(event.connect(account1).safeMint(account1.address, 1, option)).to.changeEtherBalances([owner, account1], [option.value, -option.value]);
@@ -316,7 +316,7 @@ describe('Dynamic Pricing', function () {
 	it('Owner decrease price', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option = {value: 1e9};
 		await expect(event.connect(account1).safeMint(account1.address, 1, option)).to.changeEtherBalances([owner, account1], [option.value, -option.value]);
@@ -334,7 +334,7 @@ describe('Dynamic Pricing', function () {
 	it('Non-owner tries to set price', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		await expect(event.connect(account1).setPrice(1e10)).to.be.revertedWith(
 			"Ownable: caller is not the owner"
@@ -348,7 +348,7 @@ describe('Get Resale Price', function () {
 	it('Sucessful get resale price', async function() {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 1e9};
 
@@ -362,7 +362,7 @@ describe('Set Resale Price', function() {
 	it('Successful set resale price', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 1e9};
 
@@ -384,7 +384,7 @@ describe('Set Resale Price', function() {
 	it('Non-token-owner tries to set resale price', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 0};
 
@@ -401,7 +401,7 @@ describe('Set Resale Price', function() {
 	it('Owner set resale price at maximum resale price', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 0};
 
@@ -419,14 +419,13 @@ describe('Set Resale Price', function() {
 	it('Owner set resale price above maximum resale price', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 1e5);
 
 		const option1 = {value: 0};
 
 		// Mint 
 		await expect(event.safeMint(owner.address, 1, option1)).to.changeEtherBalance(owner, 0);
 
-		await event.setMaximumResalePrice(1e5);
 		expect(await event.maxResellPrice()).to.equal(1e5);
 
 		// Set Re-Sale Price
@@ -437,14 +436,13 @@ describe('Set Resale Price', function() {
 	it('Non-Owner set resale price at maximum resale price', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 1e5);
 
 		const option1 = {value: 1e9};
 
 		// Mint 
 		await expect(event.connect(account1).safeMint(account1.address, 1, option1)).to.changeEtherBalances([owner, account1], [option1.value, -option1.value]);
 
-		await event.setMaximumResalePrice(1e5);
 		expect(await event.maxResellPrice()).to.equal(1e5);
 
 		// Set Re-Sale Price
@@ -455,14 +453,13 @@ describe('Set Resale Price', function() {
 	it('Non-Owner set resale price above maximum resale price', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 1e5);
 
 		const option1 = {value: 1e9};
 
 		// Mint 
 		await expect(event.connect(account1).safeMint(account1.address, 1, option1)).to.changeEtherBalances([owner, account1], [option1.value, -option1.value]);
 
-		await event.setMaximumResalePrice(1e5);
 		expect(await event.maxResellPrice()).to.equal(1e5);
 
 		// Set Re-Sale Price
@@ -475,7 +472,7 @@ describe('Set Resale Price', function() {
 	it('Non-Token-Owner try to set resale price of non existing token', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 1e9};
 
@@ -492,7 +489,7 @@ describe('Set Resale Price', function() {
 	it('Non-Token-Owner try to set resale price of others token', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 1e9};
 
@@ -511,7 +508,7 @@ describe('Set Resale Price', function() {
 	it('Decrease maximum resale price, remove non owner listings', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 1e9};
 
@@ -534,7 +531,7 @@ describe('Set Resale Price', function() {
 	it('Increase maximum resale price, does not change listings', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 1e9};
 
@@ -560,7 +557,7 @@ describe('Re-Selling Tickets', function () {
 	it('Successful transfer from owner to buyer, No Royalty', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 0};
 		const option2 = {value: 1e5};
@@ -579,7 +576,7 @@ describe('Re-Selling Tickets', function () {
 	it('Successful transfer from owner to buyer No Change, No Royalty', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 0};
 		const option2 = {value: 1e6};
@@ -598,7 +595,7 @@ describe('Re-Selling Tickets', function () {
 	it('Failed transfer from owner to buyer (insufficient funds), No Royalty', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 0};
 		const option2 = {value: 1e4};
@@ -619,7 +616,7 @@ describe('Re-Selling Tickets', function () {
 	it('Failed transfer from owner to buyer (max owned limit), No Royalty', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 0};
 		const option2 = {value: 1e5};
@@ -642,7 +639,7 @@ describe('Re-Selling Tickets', function () {
 	it('Failed transfer from owner to buyer (ticket not for sale), No Royalty', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 0};
 		const option2 = {value: 1e4};
@@ -659,7 +656,7 @@ describe('Re-Selling Tickets', function () {
 	it('Failed transfer from owner to buyer (invalid token id), No Royalty', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 0};
 		const option2 = {value: 1e5};
@@ -680,7 +677,7 @@ describe('Re-Selling Tickets', function () {
 	it('Failed transfer from buyer to buyer (from self to self), No Royalty', async function () {
 		const [owner, account1] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 1e9};
 		const option2 = {value: 1e5};
@@ -701,7 +698,7 @@ describe('Re-Selling Tickets', function () {
 	it('Failed transfer from wrong owner to buyer, No Royalty', async function () {
 		const [owner, account1, account2] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
-		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0);
 
 		const option1 = {value: 1e9};
 		const option2 = {value: 1e5};
