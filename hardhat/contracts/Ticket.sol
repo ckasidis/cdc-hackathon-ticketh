@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
+contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
@@ -50,8 +50,8 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         }
 
         uint256 tokenId = _tokenIdCounter.current();
-        _safeMint(to, tokenId); // Safe mint might fail so increment after success only
         _tokenIdCounter.increment();
+        _safeMint(to, tokenId);
         
         string memory strUri = string.concat(Strings.toString(uri), ".json");
         _setTokenURI(tokenId, strUri);
