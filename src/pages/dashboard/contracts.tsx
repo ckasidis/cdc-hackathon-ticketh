@@ -2,6 +2,7 @@ import {
 	Alert,
 	AlertDescription,
 	AlertIcon,
+	Box,
 	Button,
 	FormControl,
 	FormErrorMessage,
@@ -11,6 +12,7 @@ import {
 	Input,
 	InputGroup,
 	InputLeftAddon,
+	ListItem,
 	Spinner,
 	Stack,
 	Table,
@@ -21,6 +23,7 @@ import {
 	Th,
 	Thead,
 	Tr,
+	UnorderedList,
 	useDisclosure,
 	useToast,
 } from '@chakra-ui/react';
@@ -200,12 +203,40 @@ const MyContractsPage: NextPage<MyContractsPageProps> = ({ user }) => {
 					<form onSubmit={formik.handleSubmit}>
 						<Stack spacing={5}>
 							<Stack spacing={3}>
+								<FormControl id="label" isInvalid={!!formik.errors.label}>
+									<Stack>
+										<FormLabel variant="inline">Contract Label</FormLabel>
+										<Input
+											value={formik.values.label}
+											onChange={formik.handleChange}
+											onBlur={formik.handleBlur}
+										/>
+										{formik.touched.label && (
+											<FormErrorMessage>{formik.errors.label}</FormErrorMessage>
+										)}
+									</Stack>
+								</FormControl>
 								<FormControl
 									id="contentId"
 									isInvalid={!!formik.errors.contentId}
 								>
 									<Stack>
-										<FormLabel variant="inline">Metadata IPFS CID</FormLabel>
+										<Box>
+											<FormLabel variant="inline">Metadata IPFS CID</FormLabel>
+											<FormHelperText mt={0} color="muted">
+												<UnorderedList>
+													<ListItem>
+														Please upload an IPFS folder containing 1.json -
+														n.json NFT metadata files (n is the total number of
+														tickets)
+													</ListItem>
+													<ListItem>
+														json metadata files must have &ldquo;name&rdquo; and
+														&ldquo;image&rdquo; keys
+													</ListItem>
+												</UnorderedList>
+											</FormHelperText>
+										</Box>
 										<InputGroup>
 											<InputLeftAddon>ipfs://</InputLeftAddon>
 											<Input
@@ -218,19 +249,6 @@ const MyContractsPage: NextPage<MyContractsPageProps> = ({ user }) => {
 											<FormErrorMessage>
 												{formik.errors.contentId}
 											</FormErrorMessage>
-										)}
-									</Stack>
-								</FormControl>
-								<FormControl id="label" isInvalid={!!formik.errors.label}>
-									<Stack>
-										<FormLabel variant="inline">Contract Label</FormLabel>
-										<Input
-											value={formik.values.label}
-											onChange={formik.handleChange}
-											onBlur={formik.handleBlur}
-										/>
-										{formik.touched.label && (
-											<FormErrorMessage>{formik.errors.label}</FormErrorMessage>
 										)}
 									</Stack>
 								</FormControl>
@@ -258,7 +276,14 @@ const MyContractsPage: NextPage<MyContractsPageProps> = ({ user }) => {
 									isInvalid={!!formik.errors.maxTicketsOwnable}
 								>
 									<Stack>
-										<FormLabel variant="inline">Max Tickets Ownable</FormLabel>
+										<Box>
+											<FormLabel variant="inline">
+												Max Tickets Ownable
+											</FormLabel>
+											<FormHelperText mt={0} color="muted">
+												Put 0 leave blank to disable limit
+											</FormHelperText>
+										</Box>
 										<Input
 											type="number"
 											value={formik.values.maxTicketsOwnable}
@@ -272,9 +297,6 @@ const MyContractsPage: NextPage<MyContractsPageProps> = ({ user }) => {
 											</FormErrorMessage>
 										)}
 									</Stack>
-									<FormHelperText>
-										Put 0 leave blank to disable limit
-									</FormHelperText>
 								</FormControl>
 							</Stack>
 							<Button

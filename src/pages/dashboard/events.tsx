@@ -150,7 +150,7 @@ const MyEventsPage: NextPage<MyEventsPageProps> = () => {
 									<Stack>
 										<Box>
 											<FormLabel variant="inline">Event Description</FormLabel>
-											<FormHelperText mt="0" color="muted">
+											<FormHelperText mt={0} color="muted">
 												Write a short introduction about your event
 											</FormHelperText>
 										</Box>
@@ -274,19 +274,21 @@ const MyEventsPage: NextPage<MyEventsPageProps> = () => {
 													</Text>
 												</Td>
 												<Td>
-													<Text fontSize="xs" color="muted">
-														{event.contracts.length ? (
-															<List spacing={1}>
-																{event.contracts.map((contract) => (
-																	<ListItem key={contract.address}>
+													{event.contracts.length ? (
+														<List spacing={1}>
+															{event.contracts.map((contract) => (
+																<ListItem key={contract.address}>
+																	<Text fontSize="xs" color="muted">
 																		{truncateString(contract.address)}
-																	</ListItem>
-																))}
-															</List>
-														) : (
-															'-'
-														)}
-													</Text>
+																	</Text>
+																</ListItem>
+															))}
+														</List>
+													) : (
+														<Text fontSize="xs" color="muted">
+															-
+														</Text>
+													)}
 												</Td>
 												<Td>
 													<Text fontSize="xs" color="muted">
