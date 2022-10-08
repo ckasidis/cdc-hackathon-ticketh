@@ -25,24 +25,16 @@ import DisplayTicketsModal from '../../components/modals/DisplayTicketsModal';
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
 	const session = await getServerAuthSession(ctx);
-	if (!session) {
-		return {
-			redirect: {
-				destination: '/signin',
-				permanent: false,
-			},
-		};
-	}
 
 	return {
 		props: {
-			user: session.user,
+			user: session?.user || null,
 		},
 	};
 };
 
 interface EventPageProps {
-	user: User;
+	user?: User | null;
 }
 
 const EventPage: NextPage<EventPageProps> = ({ user }) => {
@@ -75,7 +67,7 @@ const EventPage: NextPage<EventPageProps> = ({ user }) => {
 			<Head>
 				<title>Event Page</title>
 			</Head>
-			{contractToBuyTicket && (
+			{user && contractToBuyTicket && (
 				<BuyTicketModal
 					contractAddress={contractToBuyTicket}
 					walletAddress={user.address}
@@ -83,7 +75,7 @@ const EventPage: NextPage<EventPageProps> = ({ user }) => {
 					onClose={buyTicket.onClose}
 				/>
 			)}
-			{contractToDisplayTickets && (
+			{user && contractToDisplayTickets && (
 				<DisplayTicketsModal
 					contractAddress={contractToDisplayTickets}
 					walletAddress={user.address}
@@ -108,41 +100,61 @@ const EventPage: NextPage<EventPageProps> = ({ user }) => {
 								{event?.name}
 							</Heading>
 							{event?.description && <Text as="p">{event.description}</Text>}
-							<Stack spacing={5}>
-								<Heading as="h2" size="sm">
-									Event Contracts
-								</Heading>
-								{event?.contracts.map((contract) => (
-									<Stack
-										key={contract.address}
-										bg="bg-surface"
-										p={5}
-										rounded="xl"
-									>
-										<Text>{contract.address}</Text>
-										<SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2}>
-											<Button
-												onClick={() => {
-													setContractToBuyTicket(contract.address);
-													buyTicket.onOpen();
-												}}
-												variant="primary"
+							{user ? (
+								<Stack spacing={5}>
+									<Heading as="h2" size="sm">
+										Event Contracts
+									</Heading>
+									{event?.contracts.length ? (
+										event?.contracts.map((contract) => (
+											<Stack
+												key={contract.address}
+												spacing={3}
+												bg="bg-surface"
+												p={5}
+												rounded="xl"
 											>
-												Buy a Ticket
-											</Button>
-											<Button
-												onClick={() => {
-													setContractToDisplayTickets(contract.address);
-													displayTickets.onOpen();
-												}}
-												variant="secondary"
-											>
-												My Tickets
-											</Button>
-										</SimpleGrid>
-									</Stack>
-								))}
-							</Stack>
+												<Heading as="h3">{contract.label}</Heading>
+												<Text>{contract.address}</Text>
+												<SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2}>
+													<Button
+														onClick={() => {
+															setContractToBuyTicket(contract.address);
+															buyTicket.onOpen();
+														}}
+														variant="primary"
+													>
+														Buy a Ticket
+													</Button>
+													<Button
+														onClick={() => {
+															setContractToDisplayTickets(contract.address);
+															displayTickets.onOpen();
+														}}
+														variant="secondary"
+													>
+														My Tickets
+													</Button>
+												</SimpleGrid>
+											</Stack>
+										))
+									) : (
+										<Alert status="warning">
+											<AlertIcon />
+											<AlertDescription>
+												This event does not have any contracts
+											</AlertDescription>
+										</Alert>
+									)}
+								</Stack>
+							) : (
+								<Alert status="info">
+									<AlertIcon />
+									<AlertDescription>
+										Login with MetaMask to buy tickets
+									</AlertDescription>
+								</Alert>
+							)}
 						</Stack>
 					</>
 				)}

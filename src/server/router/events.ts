@@ -7,7 +7,7 @@ export const eventsRouter = createRouter()
 			id: z.string({ required_error: 'ID is required' }),
 		}),
 		async resolve({ input, ctx }) {
-			return await ctx.prisma.event.findUnique({
+			const data = await ctx.prisma.event.findUnique({
 				where: {
 					id: input.id,
 				},
@@ -15,15 +15,25 @@ export const eventsRouter = createRouter()
 					contracts: {
 						select: {
 							address: true,
+							label: true,
 						},
 					},
 				},
 			});
+
+			if (data?.status === 'PUBLISHED') {
+				return data;
+			}
+
+			return data?.userId === ctx.session?.user.id ? data : null;
 		},
 	})
 	.query('read-events', {
 		async resolve({ ctx }) {
 			return await ctx.prisma.event.findMany({
+				where: {
+					status: 'PUBLISHED',
+				},
 				orderBy: {
 					createdAt: 'desc',
 				},

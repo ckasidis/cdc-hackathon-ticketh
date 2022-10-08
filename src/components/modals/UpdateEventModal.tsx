@@ -20,6 +20,7 @@ import {
 	ModalFooter,
 	ModalHeader,
 	ModalOverlay,
+	Select,
 	Spinner,
 	Stack,
 	Textarea,
@@ -94,12 +95,14 @@ const UpdateEventModal: React.FC<UpdateEventModalProps> = ({
 			name: event?.name || '',
 			contracts: event?.contracts,
 			description: event?.description || '',
+			status: event?.status || ('DRAFT' as 'DRAFT' | 'PUBLISHED'),
 		},
 		enableReinitialize: true,
 		validationSchema: toFormikValidationSchema(
 			z.object({
 				name: z.string({ required_error: 'name is required' }),
 				description: z.string().nullish(),
+				status: z.enum(['DRAFT', 'PUBLISHED']),
 			})
 		),
 		onSubmit: (values) => {
@@ -215,6 +218,25 @@ const UpdateEventModal: React.FC<UpdateEventModalProps> = ({
 														))}
 												</Stack>
 											</CheckboxGroup>
+										)}
+									</Stack>
+								</FormControl>
+								<FormControl id="status" isInvalid={!!formik.errors.status}>
+									<Stack>
+										<FormLabel variant="inline">Status</FormLabel>
+										<Select
+											value={formik.values.status}
+											onChange={formik.handleChange}
+											onBlur={formik.handleBlur}
+											variant="filled"
+										>
+											<option value="DRAFT">draft</option>
+											<option value="PUBLISHED">published</option>
+										</Select>
+										{formik.touched.status && (
+											<FormErrorMessage>
+												{formik.errors.status}
+											</FormErrorMessage>
 										)}
 									</Stack>
 								</FormControl>

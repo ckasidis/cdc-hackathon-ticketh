@@ -2,6 +2,7 @@ import {
 	Alert,
 	AlertDescription,
 	AlertIcon,
+	Badge,
 	Box,
 	Button,
 	FormControl,
@@ -12,6 +13,7 @@ import {
 	Input,
 	List,
 	ListItem,
+	Select,
 	Spinner,
 	Stack,
 	Table,
@@ -100,11 +102,13 @@ const MyEventsPage: NextPage<MyEventsPageProps> = () => {
 		initialValues: {
 			name: '',
 			description: '',
+			status: 'DRAFT' as 'DRAFT' | 'PUBLISHED',
 		},
 		validationSchema: toFormikValidationSchema(
 			z.object({
 				name: z.string({ required_error: 'name is required' }),
 				description: z.string().nullish(),
+				status: z.enum(['DRAFT', 'PUBLISHED']),
 			})
 		),
 		onSubmit: (values, actions) => {
@@ -155,6 +159,25 @@ const MyEventsPage: NextPage<MyEventsPageProps> = () => {
 											onChange={formik.handleChange}
 											onBlur={formik.handleBlur}
 										/>
+										<FormControl id="status" isInvalid={!!formik.errors.status}>
+											<Stack>
+												<FormLabel variant="inline">Status</FormLabel>
+												<Select
+													value={formik.values.status}
+													onChange={formik.handleChange}
+													onBlur={formik.handleBlur}
+													variant="filled"
+												>
+													<option value="DRAFT">draft</option>
+													<option value="PUBLISHED">published</option>
+												</Select>
+												{formik.touched.status && (
+													<FormErrorMessage>
+														{formik.errors.status}
+													</FormErrorMessage>
+												)}
+											</Stack>
+										</FormControl>
 										{formik.touched.description && (
 											<FormErrorMessage>
 												{formik.errors.description}
@@ -188,6 +211,9 @@ const MyEventsPage: NextPage<MyEventsPageProps> = () => {
 											<Th></Th>
 											<Th>
 												<Text>Name</Text>
+											</Th>
+											<Th>
+												<Text>Status</Text>
 											</Th>
 											<Th>
 												<Text>Description</Text>
@@ -229,6 +255,16 @@ const MyEventsPage: NextPage<MyEventsPageProps> = () => {
 													<Text fontSize="xs" color="muted">
 														{event.name}
 													</Text>
+												</Td>
+												<Td>
+													<Badge
+														size="sm"
+														colorScheme={
+															event.status === 'DRAFT' ? 'yellow' : 'green'
+														}
+													>
+														<Text fontSize="xs">{event.status}</Text>
+													</Badge>
 												</Td>
 												<Td>
 													<Text fontSize="xs" color="muted">

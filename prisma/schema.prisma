@@ -33,9 +33,15 @@ model Event {
     name        String
     userId      String
     description String?
+    status      Status     @default(DRAFT)
     createdAt   DateTime   @default(now())
     contracts   Contract[]
     user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@unique([userId, name])
+}
+
+enum Status {
+    DRAFT
+    PUBLISHED
 }
