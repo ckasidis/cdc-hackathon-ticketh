@@ -210,3 +210,41 @@ describe('Mint Exceed Ticket Ownable Limit', function() {
 		expect(await event.balanceOf(owner.address)).to.equal(3);
 	});
 });
+
+describe('Dynamic Pricing', function () {
+	it('Owner increase price', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option = {value: 1e9};
+		await expect(event.connect(account1).safeMint(account1.address, 1, option)).to.changeEtherBalances([owner, account1], [option.value, -option.value]);
+
+		await event.setPrice(1e10);
+		expect(await event.ticketPriceWei()).to.equal(1e10);
+		await expect(event.connect(account1).safeMint(owner.address, 2, option)).to.revertedWith(
+			"Value sent must be greater than price"
+		);
+
+		option.value = 1e10;
+		await expect(event.connect(account1).safeMint(account1.address, 2, option)).to.changeEtherBalances([owner, account1], [option.value, -option.value]);
+	});
+
+	it('Owner decrease price', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2);
+
+		const option = {value: 1e9};
+		await expect(event.connect(account1).safeMint(account1.address, 1, option)).to.changeEtherBalances([owner, account1], [option.value, -option.value]);
+
+		await event.setPrice(1e8);
+		expect(await event.ticketPriceWei()).to.equal(1e8);
+		await expect(event.connect(account1).safeMint(account1.address, 2, option)).to.changeEtherBalances([owner, account1], [option.value, -option.value]);
+
+		option.value = 1e7;
+		await expect(event.connect(account1).safeMint(owner.address, 3, option)).to.revertedWith(
+			"Value sent must be greater than price"
+		);
+	});
+});
