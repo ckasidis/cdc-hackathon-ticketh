@@ -6,11 +6,14 @@ import {
 	Stack,
 	Text,
 } from '@chakra-ui/react';
+import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { MouseEventHandler } from 'react';
 import { IconType } from 'react-icons';
-import { FiX, FiUser, FiCalendar, FiFileText } from 'react-icons/fi';
+import { FiX, FiUser, FiCalendar, FiFileText, FiLogOut } from 'react-icons/fi';
+import { FaUsersCog } from 'react-icons/fa';
 import Logo from '../Logo';
+import SidebarButton from './SidebarButton';
 import SideBarButton from './SidebarButton';
 
 interface NavItem {
@@ -19,8 +22,12 @@ interface NavItem {
 	path: string;
 }
 
+const MyAccount: NavItem[] = [
+	{ label: 'Profile', icon: FiUser, path: '/dashboard' },
+];
+
 const ManageEvents: NavItem[] = [
-	{ label: 'My Events', icon: FiCalendar, path: '/dashboard/events' },
+	{ label: 'My Events', icon: FaUsersCog, path: '/dashboard/events' },
 	{
 		label: 'My Contracts',
 		icon: FiFileText,
@@ -28,8 +35,8 @@ const ManageEvents: NavItem[] = [
 	},
 ];
 
-const MyAccount: NavItem[] = [
-	{ label: 'Profile', icon: FiUser, path: '/dashboard' },
+const SearchEvents: NavItem[] = [
+	{ label: 'All Events', icon: FiCalendar, path: '/events' },
 ];
 
 interface SidebarProps extends FlexProps {
@@ -75,6 +82,21 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose, ...props }) => {
 					</Stack>
 					<Stack>
 						<Text fontSize="xs" color="on-accent-muted" fontWeight="semibold">
+							Search Events
+						</Text>
+						<Stack spacing="1">
+							{SearchEvents.map((item) => (
+								<SideBarButton
+									key={item.label}
+									onClick={() => router.push(item.path)}
+									label={item.label}
+									icon={item.icon}
+								/>
+							))}
+						</Stack>
+					</Stack>
+					<Stack>
+						<Text fontSize="xs" color="on-accent-muted" fontWeight="semibold">
 							Manage Events
 						</Text>
 						<Stack spacing="1">
@@ -89,6 +111,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose, ...props }) => {
 						</Stack>
 					</Stack>
 				</Stack>
+				<SidebarButton
+					onClick={() => signOut()}
+					label="Sign out"
+					icon={FiLogOut}
+				/>
 			</Stack>
 		</Flex>
 	);
