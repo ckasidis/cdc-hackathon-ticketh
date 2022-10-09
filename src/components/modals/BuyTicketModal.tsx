@@ -58,9 +58,10 @@ const BuyTicketModal: React.FC<BuyTicketModalProps> = ({
 		}
 
 		const ticket = new ethers.Contract(contractAddress, abi, signer);
+		const price = await ticket.ticketPriceWei();
 
 		try {
-			await ticket.safeMint(walletAddress, uri);
+			await ticket.safeMint(walletAddress, uri, { value: price });
 		} catch (e: any) {
 			toast({
 				title: e?.error?.data?.message || 'Error minting a new ticket',
