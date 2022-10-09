@@ -11,7 +11,12 @@ const BaseLayout: React.FC<PropsWithChildren> = ({ children }) => {
 	return (
 		<Flex minH="100vh" bg="bg-canvas">
 			<Stack spacing={0} flex={1}>
-				<HStack justifyContent="space-between" bg="bg-accent" py="4" px="6">
+				<HStack
+					justifyContent="space-between"
+					bg="bg-accent"
+					py="4"
+					px={{ base: 4, sm: 8 }}
+				>
 					<Logo />
 					<HStack spacing={4}>
 						<Button
@@ -38,7 +43,10 @@ const BaseLayout: React.FC<PropsWithChildren> = ({ children }) => {
 					</HStack>
 				</HStack>
 				<Box as="main" flex={1}>
-					<Container maxW={{ base: 'xs', sm: 'sm' }} py={{ base: 8, md: 14 }}>
+					<Container
+						maxW={{ base: 'xs', sm: 'md', md: 'lg', lg: '2xl' }}
+						py={{ base: 8, lg: 14 }}
+					>
 						{children}
 					</Container>
 				</Box>
