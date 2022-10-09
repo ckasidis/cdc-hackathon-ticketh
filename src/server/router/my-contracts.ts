@@ -6,7 +6,6 @@ export const myContractsRouter = createProtectedRouter()
 	.mutation('create-contract', {
 		input: z.object({
 			address: z.string({ required_error: 'address is required' }),
-			contentId: z.string({ required_error: 'CID is required' }),
 			label: z.string({ required_error: 'label is required' }),
 			eventId: z.string().nullish(),
 		}),
@@ -14,7 +13,6 @@ export const myContractsRouter = createProtectedRouter()
 			return await ctx.prisma.contract.create({
 				data: {
 					address: input.address,
-					contentId: input.contentId,
 					label: input.label,
 					eventId: input.eventId,
 					userId: ctx.session.user.id,

@@ -116,12 +116,6 @@ const UpdateContractModal: React.FC<UpdateContractModalProps> = ({
 										<Input value={contract?.address} disabled />
 									</Stack>
 								</FormControl>
-								<FormControl id="contentId">
-									<Stack>
-										<FormLabel variant="inline">CID</FormLabel>
-										<Input value={contract?.contentId} disabled />
-									</Stack>
-								</FormControl>
 								<FormControl id="label" isInvalid={!!formik.errors.label}>
 									<Stack>
 										<FormLabel variant="inline">Contract Label</FormLabel>
