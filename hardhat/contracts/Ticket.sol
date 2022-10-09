@@ -8,27 +8,48 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
+contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
+
     string private cid;
     uint public noOfTickets;
-    address[] private uriOwners;
+    
     uint public maxTicketsOwnable;
+    uint public ticketPriceWei;
 
-    constructor(string memory _cid, uint _noOfTickets, uint _maxTicketsOwnable) ERC721("Ticket", "TKT") {
+    uint public maxResellPrice;
+    uint32 public royaltyPercentP2; // Precision 2 d.p.
+
+    address[] private uriOwners;
+    //mapping(uint256 => uint) resalePrices; // Maps tokenId to resale price
+    uint[] public resalePrices;
+
+    bool pauseMint;
+    bool pauseResale;
+
+    constructor(string memory _cid, uint _noOfTickets, uint _ticketPriceWei, uint _maxTicketsOwnable, uint _maxResellPrice, uint32 _royaltyPercentP2) ERC721("Ticket", "TKT") {
         cid = _cid;
         noOfTickets = _noOfTickets;
         uriOwners = new address[](_noOfTickets);
+        resalePrices = new uint[](_noOfTickets);
+        ticketPriceWei = _ticketPriceWei;
         maxTicketsOwnable = _maxTicketsOwnable;
+        maxResellPrice = _maxResellPrice;
+
+        require(_royaltyPercentP2 <= 1e5, "Royalty Percentage must be less than 100");
+        royaltyPercentP2 = _royaltyPercentP2;
+
+        pauseMint = false;
+        pauseResale = false;
     }
 
     function _baseURI() internal view override returns (string memory) {
         return string.concat("ipfs://", cid, '/');
     }
 
-    function safeMint(address to, uint uri) public {
+    function safeMint(address to, uint uri) public payable {
 
         // Check if index is valid
         require(uri >= 1 && uri <= noOfTickets, "Invalid token uri");
@@ -37,17 +58,96 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         // Check if index is minted
         require(uriOwners[shiftedIndex] == address(0), "This ticket has already been sold");
         
+        // Owner get to mint tickets for free
+        address ownerAddr = owner();
+        if(msg.sender != ownerAddr) {
+            require(msg.value >= ticketPriceWei, "Value sent must be greater than price");
+            payable(ownerAddr).transfer(msg.value); // Does not return change to buyer
+        }
+
         uint256 tokenId = _tokenIdCounter.current();
-        _safeMint(to, tokenId); // Safe mint might fail so increment after success only
         _tokenIdCounter.increment();
+        _safeMint(to, tokenId);
         
         string memory strUri = string.concat(Strings.toString(uri), ".json");
         _setTokenURI(tokenId, strUri);
         uriOwners[shiftedIndex] = to;
+
+        resalePrices[tokenId] = 0;
     }
 
     function getUriOwners() external view returns (address[] memory) {
         return uriOwners;
+    }
+
+    function setPrice(uint newPriceWei) external onlyOwner {
+        ticketPriceWei = newPriceWei;
+    }
+
+    function setMaxTicketLimit(uint newMaxTicketsOwnable) external onlyOwner {
+        maxTicketsOwnable = newMaxTicketsOwnable;
+    }
+
+    function setRoyalty(uint32 newRoyaltyPercentP2) external onlyOwner {
+        royaltyPercentP2 = newRoyaltyPercentP2;
+    }
+
+    function getResalePrice(uint tokenId) view external returns (uint){
+        require(tokenId < noOfTickets, "Invalid token id");
+        return resalePrices[tokenId];
+    }
+
+    function setResalePrice(uint tokenId, uint newResalePrice) external {
+        require(msg.sender == ownerOf(tokenId), "Only owner of this token can set its price");
+        require((newResalePrice <= maxResellPrice) || (maxResellPrice == 0) || (ownerOf(tokenId) == owner()), "Resale price must be less than specified price ceiling");
+        resalePrices[tokenId] = newResalePrice;
+    }
+
+    /**
+     * Buyer (to) must send sufficient funds to buyTicket to buy ticket from the seller (from)
+     */
+    function transactTicket(address from, address to, uint tokenId) external payable {
+        require(tokenId < noOfTickets, "Invalid token id");
+        require(resalePrices[tokenId] != 0, "Token not set for sale");
+        require(from != to, "Can't perform transcation with same from and to address");
+        _safeTransfer(from, to, tokenId, "");
+        require(msg.value >= resalePrices[tokenId], "There must be sufficient funds to buy the token");
+
+        uint[5] memory digits;
+        uint p = royaltyPercentP2;
+        for(uint i = 0; i < 5; i++) {
+            digits[i] = resalePrices[tokenId] * (p % 10);
+            p = p / 10;
+        }
+
+        uint royalty = 0;
+        uint div = 10000;
+        for(uint i = 0; i < 5; i++) {
+            royalty += digits[i] / div;
+            div = div / 10;
+        }
+
+        uint rev = msg.value - royalty;
+
+        if(royalty > 0) {
+            payable(owner()).transfer(royalty);
+        }
+
+        if(rev > 0) {
+            payable(from).transfer(rev);
+        }
+        
+    }
+
+    function setMaximumResalePrice(uint newMaxResellPrice) external onlyOwner{
+        maxResellPrice = newMaxResellPrice;
+
+        // Invalidate market listing
+        for(uint i = 0; i < noOfTickets; i++) {
+            if(resalePrices[i] > maxResellPrice && (ownerOf(i) != owner())) {
+                resalePrices[i] = 0;
+            }
+        }
     }
 
     // The following functions are overrides required by Solidity.
@@ -61,7 +161,7 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
 
         // Check if owner balance exceed max
         uint256 toBalance = balanceOf(to);
-        require( (toBalance < maxTicketsOwnable) || (maxTicketsOwnable == 0), "This address owned maximum number of tickets");
+        require( (toBalance < maxTicketsOwnable) || (maxTicketsOwnable == 0) || (owner() == to), "This address owned maximum number of tickets");
     }
 
     function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
