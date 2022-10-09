@@ -5,7 +5,11 @@ const Logo: React.FC = () => {
 	const router = useRouter();
 
 	return (
-		<Button onClick={() => router.push('/')} variant="unstyled" maxW={110}>
+		<Button
+			onClick={() => router.push('/')}
+			variant="unstyled"
+			maxW={{ base: 90, sm: 110 }}
+		>
 			<Image src="/logo-dark.png" alt="TickETH" />
 		</Button>
 	);
