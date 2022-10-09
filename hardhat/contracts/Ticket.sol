@@ -20,6 +20,7 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
     uint public ticketPriceWei;
 
     uint public maxResellPrice;
+    uint32 public royaltyPercentP2; // Precision 2 d.p.
 
     address[] private uriOwners;
     //mapping(uint256 => uint) resalePrices; // Maps tokenId to resale price
@@ -28,7 +29,7 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
     bool pauseMint;
     bool pauseResale;
 
-    constructor(string memory _cid, uint _noOfTickets, uint _ticketPriceWei, uint _maxTicketsOwnable, uint _maxResellPrice) ERC721("Ticket", "TKT") {
+    constructor(string memory _cid, uint _noOfTickets, uint _ticketPriceWei, uint _maxTicketsOwnable, uint _maxResellPrice, uint32 _royaltyPercentP2) ERC721("Ticket", "TKT") {
         cid = _cid;
         noOfTickets = _noOfTickets;
         uriOwners = new address[](_noOfTickets);
@@ -36,6 +37,9 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
         ticketPriceWei = _ticketPriceWei;
         maxTicketsOwnable = _maxTicketsOwnable;
         maxResellPrice = _maxResellPrice;
+
+        require(_royaltyPercentP2 <= 1e5, "Royalty Percentage must be less than 100");
+        royaltyPercentP2 = _royaltyPercentP2;
 
         pauseMint = false;
         pauseResale = false;
@@ -84,6 +88,10 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
         maxTicketsOwnable = newMaxTicketsOwnable;
     }
 
+    function setRoyalty(uint32 newRoyaltyPercentP2) external onlyOwner {
+        royaltyPercentP2 = newRoyaltyPercentP2;
+    }
+
     function getResalePrice(uint tokenId) view external returns (uint){
         require(tokenId < noOfTickets, "Invalid token id");
         return resalePrices[tokenId];
@@ -104,7 +112,31 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
         require(from != to, "Can't perform transcation with same from and to address");
         _safeTransfer(from, to, tokenId, "");
         require(msg.value >= resalePrices[tokenId], "There must be sufficient funds to buy the token");
-        payable(from).transfer(msg.value);
+
+        uint[5] memory digits;
+        uint p = royaltyPercentP2;
+        for(uint i = 0; i < 5; i++) {
+            digits[i] = resalePrices[tokenId] * (p % 10);
+            p = p / 10;
+        }
+
+        uint royalty = 0;
+        uint div = 10000;
+        for(uint i = 0; i < 5; i++) {
+            royalty += digits[i] / div;
+            div = div / 10;
+        }
+
+        uint rev = msg.value - royalty;
+
+        if(royalty > 0) {
+            payable(owner()).transfer(royalty);
+        }
+
+        if(rev > 0) {
+            payable(from).transfer(rev);
+        }
+        
     }
 
     function setMaximumResalePrice(uint newMaxResellPrice) external onlyOwner{
