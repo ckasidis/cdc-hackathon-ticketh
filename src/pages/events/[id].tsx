@@ -114,7 +114,9 @@ const EventPage: NextPage<EventPageProps> = ({ user }) => {
 												p={5}
 												rounded="xl"
 											>
-												<Heading as="h3">{contract.label}</Heading>
+												<Heading as="h3" size="xs">
+													{contract.label}
+												</Heading>
 												<Text>{contract.address}</Text>
 												<SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2}>
 													<Button
