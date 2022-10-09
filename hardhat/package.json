@@ -2,10 +2,13 @@
   "name": "hardhat-project",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
-    "hardhat": "^2.11.2",
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "hardhat": "^2.11.2"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3"
+  },
+  "scripts": {
+    "test-deploy-cronos": "npx hardhat run scripts/deployCronos.ts --network cronosTest"
   }
 }
