@@ -26,8 +26,18 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
     //mapping(uint256 => uint) resalePrices; // Maps tokenId to resale price
     uint[] public resalePrices;
 
-    bool pauseMint;
-    bool pauseResale;
+    bool public pauseMint;
+    bool public pauseResale;
+
+    modifier mintNotPaused {
+        require(!pauseMint || (msg.sender == owner()), "Mint is paused");
+        _;
+    }
+
+    modifier resaleNotPaused {
+        require(!pauseResale || (msg.sender == owner()), "Resale is paused");
+        _;
+    }
 
     constructor(string memory _cid, uint _noOfTickets, uint _ticketPriceWei, uint _maxTicketsOwnable, uint _maxResellPrice, uint32 _royaltyPercentP2) ERC721("Ticket", "TKT") {
         cid = _cid;
@@ -49,7 +59,7 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
         return string.concat("ipfs://", cid, '/');
     }
 
-    function safeMint(address to, uint uri) public payable {
+    function safeMint(address to, uint uri) public payable mintNotPaused {
 
         // Check if index is valid
         require(uri >= 1 && uri <= noOfTickets, "Invalid token uri");
@@ -103,10 +113,26 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
         resalePrices[tokenId] = newResalePrice;
     }
 
+    function setPauseMint() external onlyOwner {
+        pauseMint = true;
+    }
+
+    function setUnpauseMint() external onlyOwner {
+        pauseMint = false;
+    }
+
+    function setPauseResale() external onlyOwner {
+        pauseResale = true;
+    }
+
+    function setUnpauseResale() external onlyOwner {
+        pauseResale = false;
+    }
+
     /**
      * Buyer (to) must send sufficient funds to buyTicket to buy ticket from the seller (from)
      */
-    function transactTicket(address from, address to, uint tokenId) external payable {
+    function transactTicket(address from, address to, uint tokenId) external payable resaleNotPaused {
         require(tokenId < noOfTickets, "Invalid token id");
         require(resalePrices[tokenId] != 0, "Token not set for sale");
         require(from != to, "Can't perform transcation with same from and to address");
@@ -136,6 +162,8 @@ contract Ticket is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable{
         if(rev > 0) {
             payable(from).transfer(rev);
         }
+
+        resalePrices[tokenId] = 0;
         
     }
 

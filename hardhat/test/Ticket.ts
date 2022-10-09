@@ -139,6 +139,113 @@ describe('Invalid Token URI', function () {
 			"Invalid token uri"
 		);
 	});
+
+	
+});
+
+describe('Pause Mint', function () {
+	it('Event Owner Pause and Unpause Mint Attributes', async function () {
+		const [owner] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1, 0, 0);
+
+		expect(await event.pauseMint()).to.equal(false);
+
+		await event.setPauseMint();
+		expect(await event.pauseMint()).to.equal(true);
+
+		await event.setUnpauseMint();
+		expect(await event.pauseMint()).to.equal(false);
+	});
+
+	it('Buyer Tries To Pause and Unpause Mint Attributes', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1, 0, 0);
+
+		expect(await event.pauseMint()).to.equal(false);
+		await expect(event.connect(account1).setPauseMint()).to.revertedWith(
+			"Ownable: caller is not the owner"
+		);
+		expect(await event.pauseMint()).to.equal(false);
+
+		await expect(event.connect(account1).setUnpauseMint()).to.revertedWith(
+			"Ownable: caller is not the owner"
+		);
+		expect(await event.pauseMint()).to.equal(false);
+
+		await event.setPauseMint();
+
+		expect(await event.pauseMint()).to.equal(true);
+		await expect(event.connect(account1).setPauseMint()).to.revertedWith(
+			"Ownable: caller is not the owner"
+		);
+		expect(await event.pauseMint()).to.equal(true);
+
+		await expect(event.connect(account1).setUnpauseMint()).to.revertedWith(
+			"Ownable: caller is not the owner"
+		);
+		expect(await event.pauseMint()).to.equal(true);
+	});
+
+	it('Event owner able to mint ticket when paused', async function () {
+		const [owner] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1, 0, 0);
+
+		expect(await event.pauseMint()).to.equal(false);
+
+		// Mint
+		await event.safeMint(owner.address, 1);
+		expect(await event.totalSupply()).to.equal(1);
+
+		// Puase
+		await event.setPauseMint();
+		expect(await event.pauseMint()).to.equal(true);
+
+		// Mint
+		await event.safeMint(owner.address, 2);
+		expect(await event.totalSupply()).to.equal(2);
+
+		// Unpause
+		await event.setUnpauseMint();
+		expect(await event.pauseMint()).to.equal(false);
+
+		// Mint
+		await event.safeMint(owner.address, 3);
+		expect(await event.totalSupply()).to.equal(3);
+	});
+
+	it('Buyer not able to mint ticket when paused', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 0, 3, 0, 0);
+
+		expect(await event.pauseMint()).to.equal(false);
+
+		// Mint
+		await event.connect(account1).safeMint(owner.address, 1);
+		expect(await event.totalSupply()).to.equal(1);
+
+		// Puase
+		await event.setPauseMint();
+		expect(await event.pauseMint()).to.equal(true);
+
+		// Mint
+		await expect(event.connect(account1).safeMint(owner.address, 2)).to.revertedWith(
+			"Mint is paused"
+		);
+		expect(await event.totalSupply()).to.equal(1);
+
+		// Unpause
+		await event.setUnpauseMint();
+		expect(await event.pauseMint()).to.equal(false);
+
+		// Mint
+		await event.connect(account1).safeMint(owner.address, 2);
+		expect(await event.totalSupply()).to.equal(2);
+	});
+
 });
 
 describe('Mint Exceed Ticket Ownable Limit', function() {
@@ -570,7 +677,9 @@ describe('Re-Selling Tickets', function () {
 		expect(await event.getResalePrice(0)).to.equal(1e5);
 
 		// Buy 
+		expect(await event.ownerOf(0)).to.equal(owner.address);
 		await expect(event.connect(account1).transactTicket(owner.address, account1.address, 0, option2)).to.changeEtherBalances([owner, account1], [option2.value, -option2.value]);
+		expect(await event.ownerOf(0)).to.equal(account1.address);
 	});
 
 	it('Successful transfer from owner to buyer No Change, No Royalty', async function () {
@@ -589,7 +698,9 @@ describe('Re-Selling Tickets', function () {
 		expect(await event.getResalePrice(0)).to.equal(1e5);
 
 		// Buy 
+		expect(await event.ownerOf(0)).to.equal(owner.address);
 		await expect(event.connect(account1).transactTicket(owner.address, account1.address, 0, option2)).to.changeEtherBalances([owner, account1], [option2.value, -option2.value]);
+		expect(await event.ownerOf(0)).to.equal(account1.address);
 	});
 
 	it('Failed transfer from owner to buyer (insufficient funds), No Royalty', async function () {
@@ -608,9 +719,11 @@ describe('Re-Selling Tickets', function () {
 		expect(await event.getResalePrice(0)).to.equal(1e5);
 
 		// Buy (Insufficient Funds)
+		expect(await event.ownerOf(0)).to.equal(owner.address);
 		await expect(event.connect(account1).transactTicket(owner.address, account1.address, 0, option2)).to.revertedWith(
 			"There must be sufficient funds to buy the token"
 		);
+		expect(await event.ownerOf(0)).to.equal(owner.address);
 	});
 
 	it('Failed transfer from owner to buyer (max owned limit), No Royalty', async function () {
@@ -631,9 +744,11 @@ describe('Re-Selling Tickets', function () {
 		expect(await event.getResalePrice(0)).to.equal(1e5);
 
 		// Buy (exceed ownable limit)
+		expect(await event.ownerOf(0)).to.equal(owner.address);
 		await expect(event.connect(account1).transactTicket(owner.address, account1.address, 0, option2)).to.revertedWith(
 			"This address owned maximum number of tickets"
 		);
+		expect(await event.ownerOf(0)).to.equal(owner.address);
 	});
 
 	it('Failed transfer from owner to buyer (ticket not for sale), No Royalty', async function () {
@@ -648,9 +763,11 @@ describe('Re-Selling Tickets', function () {
 		await expect(event.safeMint(owner.address, 1, option1)).to.changeEtherBalance(owner, 0);
 
 		// Buy (Didn't set sale)
+		expect(await event.ownerOf(0)).to.equal(owner.address);
 		await expect(event.connect(account1).transactTicket(owner.address, account1.address, 2, option2)).to.revertedWith(
 			"Token not set for sale"
 		);
+		expect(await event.ownerOf(0)).to.equal(owner.address);
 	});
 
 	it('Failed transfer from owner to buyer (invalid token id), No Royalty', async function () {
@@ -669,9 +786,11 @@ describe('Re-Selling Tickets', function () {
 		expect(await event.getResalePrice(0)).to.equal(1e5);
 
 		// Buy (Invalid Token Id)
+		expect(await event.ownerOf(0)).to.equal(owner.address);
 		await expect(event.connect(account1).transactTicket(owner.address, account1.address, 11, option2)).to.revertedWith(
 			"Invalid token id"
 		);
+		expect(await event.ownerOf(0)).to.equal(owner.address);
 	});
 
 	it('Failed transfer from buyer to buyer (from self to self), No Royalty', async function () {
@@ -690,9 +809,11 @@ describe('Re-Selling Tickets', function () {
 		expect(await event.connect(account1).getResalePrice(0)).to.equal(1e5);
 
 		// Buy (Transfer to self)
+		expect(await event.ownerOf(0)).to.equal(account1.address);
 		await expect(event.connect(account1).transactTicket(account1.address, account1.address, 0, option2)).to.revertedWith(
 			"Can't perform transcation with same from and to address"
 		);
+		expect(await event.ownerOf(0)).to.equal(account1.address);
 	});
 
 	it('Failed transfer from wrong owner to buyer, No Royalty', async function () {
@@ -715,9 +836,13 @@ describe('Re-Selling Tickets', function () {
 		expect(await event.getResalePrice(1)).to.equal(1e5);
 
 		// Buy (Transfer to self)
+		expect(await event.ownerOf(0)).to.equal(account1.address);
+		expect(await event.ownerOf(1)).to.equal(owner.address);
 		await expect(event.connect(account2).transactTicket(account1.address, account2.address, 1, option2)).to.revertedWith(
 			"ERC721: transfer from incorrect owner"
 		);
+		expect(await event.ownerOf(0)).to.equal(account1.address);
+		expect(await event.ownerOf(1)).to.equal(owner.address);
 	});
 
 	it('Successful transfer from owner to buyer exact (1%), Royalty', async function () {
@@ -736,7 +861,9 @@ describe('Re-Selling Tickets', function () {
 		expect(await event.getResalePrice(0)).to.equal(1e5);
 
 		// Buy 
+		expect(await event.ownerOf(0)).to.equal(owner.address);
 		await expect(event.connect(account1).transactTicket(owner.address, account1.address, 0, option2)).to.changeEtherBalances([owner, account1], [option2.value, -option2.value]);
+		expect(await event.ownerOf(0)).to.equal(account1.address);
 	});
 
 	it('Successful transfer from owner to buyer exact (100%), Royalty', async function () {
@@ -755,7 +882,9 @@ describe('Re-Selling Tickets', function () {
 		expect(await event.getResalePrice(0)).to.equal(1e5);
 
 		// Buy 
+		expect(await event.ownerOf(0)).to.equal(owner.address);
 		await expect(event.connect(account1).transactTicket(owner.address, account1.address, 0, option2)).to.changeEtherBalances([owner, account1], [option2.value, -option2.value]);
+		expect(await event.ownerOf(0)).to.equal(account1.address);
 	});
 
 	it('Successful transfer from seller to buyer exact (1%), Royalty', async function () {
@@ -777,7 +906,9 @@ describe('Re-Selling Tickets', function () {
 		const royaltyFee = royalty * 1e5 / 100;
 
 		// Buy 
+		expect(await event.ownerOf(0)).to.equal(account1.address);
 		await expect(event.connect(account2).transactTicket(account1.address, account2.address, 0, option2)).to.changeEtherBalances([owner, account1, account2], [royaltyFee, option2.value-royaltyFee, -option2.value]);
+		expect(await event.ownerOf(0)).to.equal(account2.address);
 	});
 
 	it('Successful transfer from seller to buyer exact (100%), Royalty', async function () {
@@ -799,7 +930,9 @@ describe('Re-Selling Tickets', function () {
 		const royaltyFee = royalty * 1e5 / 100;
 
 		// Buy 
+		expect(await event.ownerOf(0)).to.equal(account1.address);
 		await expect(event.connect(account2).transactTicket(account1.address, account2.address, 0, option2)).to.changeEtherBalances([owner, account1, account2], [royaltyFee, option2.value-royaltyFee, -option2.value]);
+		expect(await event.ownerOf(0)).to.equal(account2.address);
 	});
 
 	it('Successful transfer from seller to buyer exact (0.5%), Royalty', async function () {
@@ -821,7 +954,9 @@ describe('Re-Selling Tickets', function () {
 		const royaltyFee = royalty * 1e5 / 100;
 
 		// Buy 
+		expect(await event.ownerOf(0)).to.equal(account1.address);
 		await expect(event.connect(account2).transactTicket(account1.address, account2.address, 0, option2)).to.changeEtherBalances([owner, account1, account2], [royaltyFee, option2.value-royaltyFee, -option2.value]);
+		expect(await event.ownerOf(0)).to.equal(account2.address);
 	});
 
 	it('Successful transfer from seller to buyer exact (0.01%), Royalty', async function () {
@@ -843,7 +978,9 @@ describe('Re-Selling Tickets', function () {
 		const royaltyFee = royalty * 1e5 / 100;
 
 		// Buy 
+		expect(await event.ownerOf(0)).to.equal(account1.address);
 		await expect(event.connect(account2).transactTicket(account1.address, account2.address, 0, option2)).to.changeEtherBalances([owner, account1, account2], [royaltyFee, option2.value-royaltyFee, -option2.value]);
+		expect(await event.ownerOf(0)).to.equal(account2.address);
 	});
 
 	it('Successful transfer from seller to buyer exact (0.00%), Royalty', async function () {
@@ -865,10 +1002,12 @@ describe('Re-Selling Tickets', function () {
 		const royaltyFee = royalty * 1e5 / 100;
 
 		// Buy 
+		expect(await event.ownerOf(0)).to.equal(account1.address);
 		await expect(event.connect(account2).transactTicket(account1.address, account2.address, 0, option2)).to.changeEtherBalances([owner, account1, account2], [royaltyFee, option2.value-royaltyFee, -option2.value]);
+		expect(await event.ownerOf(0)).to.equal(account2.address);
 	});
 
-	it('Successful transfer from seller to buyer exact (0.01%), Royalty', async function () {
+	it('Successful transfer from seller to buyer non-exact (0.01%), Royalty', async function () {
 		const [owner, account1, account2] = await ethers.getSigners();
 		const Ticket = await ethers.getContractFactory('Ticket');
 		const royalty = 1;
@@ -887,7 +1026,165 @@ describe('Re-Selling Tickets', function () {
 		const royaltyFee = royalty * 2.5e4 / 100;
 
 		// Buy 
+		expect(await event.ownerOf(0)).to.equal(account1.address);
 		await expect(event.connect(account2).transactTicket(account1.address, account2.address, 0, option2)).to.changeEtherBalances([owner, account1, account2], [royaltyFee, option2.value-royaltyFee, -option2.value]);
+		expect(await event.ownerOf(0)).to.equal(account2.address);
+	});
+
+	it('Successful transfer from seller to buyer non-exact (0.01%), Royalty', async function () {
+		const [owner, account1, account2] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const royalty = 1;
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 2, 0, royalty * 100);  // 1 %
+
+		const option1 = {value: 0};
+		const option2 = {value: 1e5};
+
+		// Mint 
+		await expect(event.safeMint(account1.address, 1, option1)).to.changeEtherBalance(owner, 0);
+
+		// Set Re-Sale Price
+		await event.connect(account1).setResalePrice(0, 2.5e4);
+		expect(await event.connect(account1).getResalePrice(0)).to.equal(2.5e4);
+
+		const royaltyFee = royalty * 2.5e4 / 100;
+
+		// Buy 
+		expect(await event.ownerOf(0)).to.equal(account1.address);
+		await expect(event.connect(account2).transactTicket(account1.address, account2.address, 0, option2)).to.changeEtherBalances([owner, account1, account2], [royaltyFee, option2.value-royaltyFee, -option2.value]);
+		expect(await event.ownerOf(0)).to.equal(account2.address);
+	});
+
+});
+
+
+describe('Pause Resale', function () {
+	it('Event Owner Pause and Unpause Resale Attributes', async function () {
+		const [owner] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1, 0, 0);
+
+		expect(await event.pauseResale()).to.equal(false);
+
+		await event.setPauseResale();
+		expect(await event.pauseResale()).to.equal(true);
+
+		await event.setUnpauseResale();
+		expect(await event.pauseResale()).to.equal(false);
+	});
+
+	it('Buyer Tries To Pause and Unpause Resale Attributes', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 1, 0, 0);
+
+		expect(await event.pauseResale()).to.equal(false);
+		await expect(event.connect(account1).setPauseResale()).to.revertedWith(
+			"Ownable: caller is not the owner"
+		);
+		expect(await event.pauseResale()).to.equal(false);
+
+		await expect(event.connect(account1).setUnpauseResale()).to.revertedWith(
+			"Ownable: caller is not the owner"
+		);
+		expect(await event.pauseResale()).to.equal(false);
+
+		await event.setPauseResale();
+
+		expect(await event.pauseResale()).to.equal(true);
+		await expect(event.connect(account1).setPauseResale()).to.revertedWith(
+			"Ownable: caller is not the owner"
+		);
+		expect(await event.pauseResale()).to.equal(true);
+
+		await expect(event.connect(account1).setUnpauseResale()).to.revertedWith(
+			"Ownable: caller is not the owner"
+		);
+		expect(await event.pauseResale()).to.equal(true);
+	});
+
+	it('Event owner able to transfer ticket when paused', async function () {
+		const [owner, account1] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 5, 0, 0);
+
+		const option1 = {value: 1e5}
+
+		// Mint and set resale
+		await event.safeMint(owner.address, 1);
+		await event.safeMint(owner.address, 2);
+		await event.safeMint(owner.address, 3);
+		expect(await event.totalSupply()).to.equal(3);
+
+		await event.setResalePrice(0, option1.value);
+		await event.setResalePrice(1, option1.value);
+		await event.setResalePrice(2, option1.value);
+		
+		// Transaction
+		expect(await event.ownerOf(0)).to.equal(owner.address);
+		await expect(event.transactTicket(owner.address, account1.address, 0, option1)).to.changeEtherBalance(owner ,0);
+		expect(await event.ownerOf(0)).to.equal(account1.address);
+
+		// Pause
+		await event.setPauseResale();
+		expect(await event.pauseResale()).to.equal(true);
+
+		// Transaction
+		expect(await event.ownerOf(1)).to.equal(owner.address);
+		await expect(event.transactTicket(owner.address, account1.address, 1, option1)).to.changeEtherBalance(owner, 0);
+		expect(await event.ownerOf(1)).to.equal(account1.address);
+
+		// Unpause
+		await event.setUnpauseResale();
+		expect(await event.pauseResale()).to.equal(false);
+
+		// Transaction
+		expect(await event.ownerOf(2)).to.equal(owner.address);
+		await expect(event.transactTicket(owner.address, account1.address, 2, option1)).to.changeEtherBalance(owner, 0);
+		expect(await event.ownerOf(2)).to.equal(account1.address);
+	});
+
+	it('Buyer not able to mint ticket when paused', async function () {
+		const [owner, account1, account2] = await ethers.getSigners();
+		const Ticket = await ethers.getContractFactory('Ticket');
+		const event = await Ticket.deploy(process.env.EXAMPLE_CID!, 10, 1e9, 5, 0, 0);
+
+		const option1 = {value: 1e5}
+
+		// Mint and set resale
+		await event.connect(account1).safeMint(account1.address, 1, {value: 1e9});
+		await event.connect(account1).safeMint(account1.address, 2, {value: 1e9});
+		await event.connect(account1).safeMint(account1.address, 3, {value: 1e9});
+		expect(await event.totalSupply()).to.equal(3);
+
+		await event.connect(account1).setResalePrice(0, option1.value);
+		await event.connect(account1).setResalePrice(1, option1.value);
+		await event.connect(account1).setResalePrice(2, option1.value);
+		
+		// Transaction
+		expect(await event.ownerOf(0)).to.equal(account1.address);
+		await expect(event.connect(account2).transactTicket(account1.address, account2.address, 0, option1)).to.changeEtherBalances([account1, account2], [option1.value, -option1.value]);
+		expect(await event.ownerOf(0)).to.equal(account2.address);
+
+		// Pause
+		await event.setPauseResale();
+		expect(await event.pauseResale()).to.equal(true);
+
+		// Transaction
+		expect(await event.ownerOf(1)).to.equal(account1.address);
+		await expect(event.connect(account2).transactTicket(account1.address, account2.address, 1, option1)).to.revertedWith(
+			"Resale is paused"
+		);
+		expect(await event.ownerOf(1)).to.equal(account1.address);
+
+		// Unpause
+		await event.setUnpauseResale();
+		expect(await event.pauseResale()).to.equal(false);
+
+		// Transaction
+		expect(await event.ownerOf(1)).to.equal(account1.address);
+		await expect(event.connect(account2).transactTicket(account1.address, account2.address, 1, option1)).to.changeEtherBalances([account1, account2], [option1.value, -option1.value]);
+		expect(await event.ownerOf(1)).to.equal(account2.address);
 	});
 
 });
