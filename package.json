@@ -20,6 +20,7 @@
     "@trpc/react": "^9.27.4",
     "@trpc/server": "^9.27.4",
     "ethers": "^5.7.1",
+    "filestack-js": "^3.25.0",
     "formik": "^2.2.9",
     "framer-motion": "^7.5.3",
     "moralis": "^2.6.4",
