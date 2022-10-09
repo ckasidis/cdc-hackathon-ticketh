@@ -9,7 +9,9 @@ import {
 	FormErrorMessage,
 	FormHelperText,
 	FormLabel,
+	HStack,
 	IconButton,
+	Image,
 	Input,
 	List,
 	ListItem,
@@ -28,6 +30,7 @@ import {
 	useDisclosure,
 	useToast,
 } from '@chakra-ui/react';
+import * as filestack from 'filestack-js';
 import { useFormik } from 'formik';
 import { GetServerSideProps, NextPage } from 'next';
 import { User } from 'next-auth';
@@ -40,6 +43,7 @@ import { z } from 'zod';
 import { toFormikValidationSchema } from 'zod-formik-adapter';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import UpdateEventModal from '../../components/modals/UpdateEventModal';
+import { env } from '../../env/client.mjs';
 import { getServerAuthSession } from '../../server/common/get-server-auth-session';
 import { trpc } from '../../utils/trpc';
 import { truncateString } from '../../utils/truncate';
@@ -112,12 +116,38 @@ const MyEventsPage: NextPage<MyEventsPageProps> = () => {
 			})
 		),
 		onSubmit: (values, actions) => {
-			createEvent(values);
+			createEvent({ ...values, image: imageUrl });
 			actions.resetForm();
 		},
 	});
 
+	const [imageUrl, setImageUrl] = useState('');
 	const [eventToUpdate, setEventToUpdate] = useState('');
+
+	const uploadBannerImage = async () => {
+		const client = filestack.init(env.NEXT_PUBLIC_FILESTACK_API_KEY);
+		const options: filestack.PickerOptions = {
+			accept: 'image/*',
+			transformations: {
+				crop: {
+					aspectRatio: 16 / 9,
+				},
+			},
+			onFileUploadFinished: (res) => {
+				setImageUrl(res.url);
+			},
+			onFileUploadFailed: () => {
+				toast({
+					title: 'Error uploading your photo',
+					status: 'error',
+					isClosable: true,
+					position: 'bottom-right',
+				});
+			},
+		};
+
+		client.picker(options).open();
+	};
 
 	return (
 		<>
@@ -142,6 +172,20 @@ const MyEventsPage: NextPage<MyEventsPageProps> = () => {
 											<FormErrorMessage>{formik.errors.name}</FormErrorMessage>
 										)}
 									</Stack>
+								</FormControl>
+								<FormControl id="banner-image" isInvalid={!!formik.errors.name}>
+									<FormLabel>Banner Image</FormLabel>
+									<HStack>
+										<Image
+											src={imageUrl || '/default_banner.jpg'}
+											alt="banner image"
+											w={20}
+											borderRadius="lg"
+										/>
+										<Button onClick={uploadBannerImage} size="sm">
+											Upload Banner Image
+										</Button>
+									</HStack>
 								</FormControl>
 								<FormControl
 									id="description"

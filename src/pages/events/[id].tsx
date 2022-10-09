@@ -2,9 +2,12 @@ import {
 	Alert,
 	AlertDescription,
 	AlertIcon,
+	Avatar,
 	Button,
 	Center,
 	Heading,
+	HStack,
+	Image,
 	SimpleGrid,
 	Spinner,
 	Stack,
@@ -99,6 +102,18 @@ const EventPage: NextPage<EventPageProps> = ({ user }) => {
 							<Heading as="h1" size="md">
 								{event?.name}
 							</Heading>
+							<Image
+								src={event?.image || '/default_banner.jpg'}
+								alt="banner image"
+								w="full"
+							/>
+							<HStack spacing={3}>
+								<Avatar
+									size="sm"
+									src={event?.user.image || '/default_profile.png'}
+								/>
+								<Text>{event?.user.username || 'anonymous'}</Text>
+							</HStack>
 							{event?.description && <Text as="p">{event.description}</Text>}
 							{user ? (
 								<Stack spacing={5}>

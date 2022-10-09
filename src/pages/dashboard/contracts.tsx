@@ -99,70 +99,75 @@ const MyContractsPage: NextPage<MyContractsPageProps> = ({ user }) => {
 							<AlertIcon />
 							<AlertDescription>Error fetching contracts</AlertDescription>
 						</Alert>
-					) : (
-						myContracts?.length && (
-							<TableContainer>
-								<Table size="sm">
-									<Thead>
-										<Tr>
-											<Th>
-												<Text></Text>
-											</Th>
-											<Th>
-												<Text>Address</Text>
-											</Th>
-											<Th>
-												<Text>Label</Text>
-											</Th>
-											<Th>
-												<Text>Linked Event</Text>
-											</Th>
-											<Th>
-												<Text>Created On</Text>
-											</Th>
+					) : myContracts?.length ? (
+						<TableContainer>
+							<Table size="sm">
+								<Thead>
+									<Tr>
+										<Th>
+											<Text></Text>
+										</Th>
+										<Th>
+											<Text>Address</Text>
+										</Th>
+										<Th>
+											<Text>Label</Text>
+										</Th>
+										<Th>
+											<Text>Linked Event</Text>
+										</Th>
+										<Th>
+											<Text>Created On</Text>
+										</Th>
+									</Tr>
+								</Thead>
+								<Tbody>
+									{myContracts?.map((contract) => (
+										<Tr key={contract.address}>
+											<Td>
+												<IconButton
+													onClick={() => {
+														setContractToUpdate(contract.address);
+														updateContract.onOpen();
+													}}
+													aria-label="update contract"
+													icon={<FiEdit />}
+													variant="link"
+													size="xs"
+												/>
+											</Td>
+											<Td>
+												<Text fontSize="xs" color="muted">
+													{truncateString(contract.address)}
+												</Text>
+											</Td>
+											<Td>
+												<Text fontSize="xs" color="muted">
+													{contract.label}
+												</Text>
+											</Td>
+											<Td>
+												<Text fontSize="xs" color="muted">
+													{contract.event?.name || '-'}
+												</Text>
+											</Td>
+											<Td>
+												<Text fontSize="xs" color="muted">
+													{contract.createdAt.toLocaleDateString()}
+												</Text>
+											</Td>
 										</Tr>
-									</Thead>
-									<Tbody>
-										{myContracts?.map((contract) => (
-											<Tr key={contract.address}>
-												<Td>
-													<IconButton
-														onClick={() => {
-															setContractToUpdate(contract.address);
-															updateContract.onOpen();
-														}}
-														aria-label="update contract"
-														icon={<FiEdit />}
-														variant="link"
-														size="xs"
-													/>
-												</Td>
-												<Td>
-													<Text fontSize="xs" color="muted">
-														{truncateString(contract.address)}
-													</Text>
-												</Td>
-												<Td>
-													<Text fontSize="xs" color="muted">
-														{contract.label}
-													</Text>
-												</Td>
-												<Td>
-													<Text fontSize="xs" color="muted">
-														{contract.event?.name || '-'}
-													</Text>
-												</Td>
-												<Td>
-													<Text fontSize="xs" color="muted">
-														{contract.createdAt.toLocaleDateString()}
-													</Text>
-												</Td>
-											</Tr>
-										))}
-									</Tbody>
-								</Table>
-							</TableContainer>
-						)
+									))}
+								</Tbody>
+							</Table>
+						</TableContainer>
+					) : (
+						<Alert status="info">
+							<AlertIcon />
+							<AlertDescription>
+								No contracts detected, create one now!
+							</AlertDescription>
+						</Alert>
 					)}
 				</Stack>
 			</DashboardLayout>

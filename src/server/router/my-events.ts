@@ -8,6 +8,7 @@ export const myEventsRouter = createProtectedRouter()
 			name: z.string({ required_error: 'name is required' }),
 			description: z.string().nullish(),
 			status: z.enum(['DRAFT', 'PUBLISHED']),
+			image: z.string().nullish(),
 		}),
 		async resolve({ input, ctx }) {
 			return await ctx.prisma.event.create({
@@ -15,6 +16,7 @@ export const myEventsRouter = createProtectedRouter()
 					name: input.name,
 					description: input.description,
 					status: input.status,
+					image: input.image,
 					userId: ctx.session.user.id,
 				},
 			});
@@ -26,6 +28,7 @@ export const myEventsRouter = createProtectedRouter()
 			name: z.string({ required_error: 'name is required' }),
 			description: z.string().nullish(),
 			status: z.enum(['DRAFT', 'PUBLISHED']),
+			image: z.string().nullish(),
 			contracts: z
 				.object({
 					address: z.string(),
@@ -56,6 +59,7 @@ export const myEventsRouter = createProtectedRouter()
 					name: input.name,
 					description: input.description,
 					status: input.status,
+					image: input.image,
 					contracts: {
 						set: input.contracts || undefined,
 					},

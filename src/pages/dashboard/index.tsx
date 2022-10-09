@@ -50,7 +50,7 @@ interface DashboardPageProps {
 }
 
 const DashboardPage: NextPage<DashboardPageProps> = ({ user }) => {
-	const updateUsername = useDisclosure();
+	const { isOpen, onOpen, onClose } = useDisclosure();
 	const toast = useToast();
 
 	const queryClient = useQueryClient();
@@ -114,11 +114,7 @@ const DashboardPage: NextPage<DashboardPageProps> = ({ user }) => {
 			<Head>
 				<title>Dashboard Page</title>
 			</Head>
-			<UpdateUsernameModal
-				id={user.id}
-				isOpen={updateUsername.isOpen}
-				onClose={updateUsername.onClose}
-			/>
+			<UpdateUsernameModal id={user.id} isOpen={isOpen} onClose={onClose} />
 			<DashboardLayout>
 				{isLoading ? (
 					<Center>
@@ -171,7 +167,7 @@ const DashboardPage: NextPage<DashboardPageProps> = ({ user }) => {
 									Username
 								</Text>
 								<IconButton
-									onClick={updateUsername.onOpen}
+									onClick={onOpen}
 									icon={<FiEdit />}
 									aria-label="edit username"
 									size="xs"
@@ -192,7 +188,7 @@ const DashboardPage: NextPage<DashboardPageProps> = ({ user }) => {
 							Sign out
 						</Button>
 					</Stack>
-				)}{' '}
+				)}
 			</DashboardLayout>
 		</>
 	);

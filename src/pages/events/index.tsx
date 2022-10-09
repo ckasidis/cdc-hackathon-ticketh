@@ -1,64 +1,68 @@
 import {
+	Alert,
+	AlertDescription,
+	AlertIcon,
 	AspectRatio,
+	Avatar,
 	Heading,
+	HStack,
 	Image,
 	SimpleGrid,
-	Skeleton,
 	Stack,
 	Text,
 } from '@chakra-ui/react';
-import { GetServerSideProps, NextPage } from 'next';
-import { User } from 'next-auth';
+import { NextPage } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
 import BaseLayout from '../../components/layouts/BaseLayout';
-import { getServerAuthSession } from '../../server/common/get-server-auth-session';
 import { trpc } from '../../utils/trpc';
 
-export const getServerSideProps: GetServerSideProps = async (ctx) => {
-	const session = await getServerAuthSession(ctx);
-
-	return {
-		props: {
-			user: session?.user || null,
-		},
-	};
-};
-
-interface EventsPageProps {
-	user: User | null;
-}
-
-const EventsPage: NextPage<EventsPageProps> = ({ user }) => {
+const EventsPage: NextPage = () => {
 	const { data: events } = trpc.useQuery(['events.read-events']);
 	return (
 		<>
 			<Head>
-				<title>Join Events</title>
+				<title>Search Events</title>
 			</Head>
 			<BaseLayout>
-				<Stack spacing={10}>
-					<Heading as="h1" size="md" textAlign="center">
-						Join Events
+				<Stack spacing={5}>
+					<Heading as="h1" size="sm" textAlign="center">
+						Search Events
 					</Heading>
-					<SimpleGrid columns={{ base: 1, sm: 2 }} spacing={10}>
-						{events?.map((event) => (
-							<Link key={event.id} href={`/events/${event.id}`} passHref>
-								<Stack cursor="pointer">
-									<AspectRatio ratio={16 / 9}>
-										<Image
-											src={event.image || 'default_banner.jpg'}
-											alt={event.name}
-											draggable="false"
-										/>
-									</AspectRatio>
-									<Heading as="h2" size="xs">
-										{event.name}
-									</Heading>
-								</Stack>
-							</Link>
-						))}
-					</SimpleGrid>
+					{events?.length ? (
+						<SimpleGrid columns={{ base: 1, sm: 2 }} spacing={10}>
+							{events?.map((event) => (
+								<Link key={event.id} href={`/events/${event.id}`} passHref>
+									<Stack cursor="pointer">
+										<AspectRatio ratio={16 / 9}>
+											<Image
+												src={event.image || 'default_banner.jpg'}
+												alt={event.name}
+												draggable="false"
+											/>
+										</AspectRatio>
+										<Heading as="h2" size="xs">
+											{event.name}
+										</Heading>
+										<HStack spacing={3}>
+											<Avatar
+												size="sm"
+												src={event.user.image || '/default_profile.png'}
+											/>
+											<Text>{event.user.username || 'anonymous'}</Text>
+										</HStack>
+									</Stack>
+								</Link>
+							))}
+						</SimpleGrid>
+					) : (
+						<Alert status="info">
+							<AlertIcon />
+							<AlertDescription>
+								There is no published event at this time
+							</AlertDescription>
+						</Alert>
+					)}{' '}
 				</Stack>
 			</BaseLayout>
 		</>

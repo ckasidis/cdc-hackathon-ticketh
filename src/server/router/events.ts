@@ -18,6 +18,12 @@ export const eventsRouter = createRouter()
 							label: true,
 						},
 					},
+					user: {
+						select: {
+							image: true,
+							username: true,
+						},
+					},
 				},
 			});
 
@@ -36,6 +42,14 @@ export const eventsRouter = createRouter()
 				},
 				orderBy: {
 					createdAt: 'desc',
+				},
+				include: {
+					user: {
+						select: {
+							image: true,
+							username: true,
+						},
+					},
 				},
 			});
 		},

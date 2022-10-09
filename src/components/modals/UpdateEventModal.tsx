@@ -12,6 +12,7 @@ import {
 	FormHelperText,
 	FormLabel,
 	HStack,
+	Image,
 	Input,
 	Modal,
 	ModalBody,
@@ -26,10 +27,13 @@ import {
 	Textarea,
 	useToast,
 } from '@chakra-ui/react';
+import * as filestack from 'filestack-js';
 import { useFormik } from 'formik';
+import { useState } from 'react';
 import { useQueryClient } from 'react-query';
 import { z } from 'zod';
 import { toFormikValidationSchema } from 'zod-formik-adapter';
+import { env } from '../../env/client.mjs';
 import { trpc } from '../../utils/trpc';
 import { truncateString } from '../../utils/truncate';
 
@@ -90,6 +94,31 @@ const UpdateEventModal: React.FC<UpdateEventModalProps> = ({
 			onSettled: onClose,
 		});
 
+	const uploadBannerImage = async () => {
+		const client = filestack.init(env.NEXT_PUBLIC_FILESTACK_API_KEY);
+		const options: filestack.PickerOptions = {
+			accept: 'image/*',
+			transformations: {
+				crop: {
+					aspectRatio: 16 / 9,
+				},
+			},
+			onFileUploadFinished: (res) => {
+				setImageUrl(res.url);
+			},
+			onFileUploadFailed: () => {
+				toast({
+					title: 'Error uploading your photo',
+					status: 'error',
+					isClosable: true,
+					position: 'bottom-right',
+				});
+			},
+		};
+
+		client.picker(options).open();
+	};
+
 	const formik = useFormik({
 		initialValues: {
 			name: event?.name || '',
@@ -108,10 +137,13 @@ const UpdateEventModal: React.FC<UpdateEventModalProps> = ({
 		onSubmit: (values) => {
 			updateEvent({
 				id,
+				image: imageUrl,
 				...values,
 			});
 		},
 	});
+
+	const [imageUrl, setImageUrl] = useState(event?.image || '');
 
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
@@ -144,6 +176,20 @@ const UpdateEventModal: React.FC<UpdateEventModalProps> = ({
 											<FormErrorMessage>{formik.errors.name}</FormErrorMessage>
 										)}
 									</Stack>
+								</FormControl>
+								<FormControl id="banner-image" isInvalid={!!formik.errors.name}>
+									<FormLabel>Banner Image</FormLabel>
+									<HStack>
+										<Image
+											src={imageUrl || '/default_banner.jpg'}
+											alt="banner image"
+											w={20}
+											borderRadius="lg"
+										/>
+										<Button onClick={uploadBannerImage} size="sm">
+											Upload Banner Image
+										</Button>
+									</HStack>
 								</FormControl>
 								<FormControl
 									id="description"
