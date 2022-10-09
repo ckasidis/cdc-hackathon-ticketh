@@ -16,11 +16,7 @@ const DashboardLayout: React.FC<PropsWithChildren> = ({ children }) => {
 					</Container>
 				</Box>
 			</Flex>
-			<Flex
-				display={{ base: 'flex', md: 'none' }}
-				minH="100vh"
-				bg="'bg-canvas'"
-			>
+			<Flex display={{ base: 'flex', md: 'none' }} minH="100vh" bg="bg-canvas">
 				{isOpen ? (
 					<Sidebar onClose={onClose} flex={1} />
 				) : (
