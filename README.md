@@ -7,6 +7,7 @@
 3. in the `hardhat` directory, run `npx hardhat compile` and `npx hardhat node`
 4. run `npx prisma migrate dev`
 5. config Environment variables
+6. run `yarn dev` and open `localhost:3000`
 
 ## Environment Variables
 ```
